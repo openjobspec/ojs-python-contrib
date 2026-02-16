@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+        package:
+          - ojs-django
+          - ojs-flask
+          - ojs-fastapi
+          - ojs-celery
+          - ojs-sqlalchemy
+
+    name: ${{ matrix.package }} / Python ${{ matrix.python-version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package
+        run: pip install -e "./${{ matrix.package }}[dev]"
+
+      - name: Lint
+        working-directory: ${{ matrix.package }}
+        run: ruff check .
+
+      - name: Type check
+        working-directory: ${{ matrix.package }}
+        run: mypy src/
+
+      - name: Test
+        working-directory: ${{ matrix.package }}
+        run: pytest --tb=short -q
