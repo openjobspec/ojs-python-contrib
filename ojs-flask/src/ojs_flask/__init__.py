@@ -1,0 +1,7 @@
+"""Flask integration for Open Job Spec (OJS)."""
+
+from ojs_flask.extension import OJS
+from ojs_flask.helpers import enqueue, get_client
+
+__version__ = "0.1.0"
+__all__ = ["OJS", "enqueue", "get_client"]
