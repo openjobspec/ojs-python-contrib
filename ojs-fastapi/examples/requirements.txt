@@ -1,0 +1,2 @@
+openjobspec-fastapi
+uvicorn[standard]
