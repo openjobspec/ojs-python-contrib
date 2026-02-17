@@ -1,0 +1,37 @@
+{% extends "admin/base_site.html" %}
+{% block title %}OJS Dead Letter Jobs{% endblock %}
+{% block content %}
+<h2>Dead Letter Jobs</h2>
+
+{% if error %}
+<div class="errornote">{{ error }}</div>
+{% endif %}
+
+{% if jobs %}
+<table>
+<thead><tr><th>ID</th><th>Type</th><th>Queue</th><th>State</th></tr></thead>
+<tbody>
+{% for job in jobs %}
+<tr>
+  <td><code>{{ job.id }}</code></td>
+  <td>{{ job.type }}</td>
+  <td>{{ job.queue }}</td>
+  <td>{{ job.state }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% if pagination %}
+<p>
+{% if page > 1 %}<a href="?page={{ page|add:"-1" }}">&laquo; Previous</a>{% endif %}
+Page {{ page }}
+{% if jobs|length == 50 %}<a href="?page={{ page|add:"1" }}">Next &raquo;</a>{% endif %}
+</p>
+{% endif %}
+{% else %}
+<p>No dead letter jobs found.</p>
+{% endif %}
+
+<p><a href="../">&laquo; Back to Dashboard</a></p>
+{% endblock %}

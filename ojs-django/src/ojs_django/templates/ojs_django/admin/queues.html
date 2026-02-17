@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+{% block title %}OJS Queues{% endblock %}
+{% block content %}
+<h2>Queues</h2>
+
+{% if error %}
+<div class="errornote">{{ error }}</div>
+{% endif %}
+
+{% if queues %}
+<table>
+<thead><tr><th>Name</th><th>Stats</th></tr></thead>
+<tbody>
+{% for q in queues %}
+<tr>
+  <td><a href="{{ q.name }}/">{{ q.name }}</a></td>
+  <td>{% if q.stats %}Available: {{ q.stats.available|default:"?" }}, Active: {{ q.stats.active|default:"?" }}{% else %}N/A{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>No queues found.</p>
+{% endif %}
+
+<p><a href="../">&laquo; Back to Dashboard</a></p>
+{% endblock %}

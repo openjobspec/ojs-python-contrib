@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Queue: {{ queue_name }}{% endblock %}
+{% block content %}
+<h2>Queue: {{ queue_name }}</h2>
+
+{% if error %}
+<div class="errornote">{{ error }}</div>
+{% endif %}
+
+{% if stats %}
+<table>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>Available</td><td>{{ stats.available|default:"N/A" }}</td></tr>
+<tr><td>Active</td><td>{{ stats.active|default:"N/A" }}</td></tr>
+<tr><td>Completed</td><td>{{ stats.completed|default:"N/A" }}</td></tr>
+<tr><td>Discarded</td><td>{{ stats.discarded|default:"N/A" }}</td></tr>
+<tr><td>Cancelled</td><td>{{ stats.cancelled|default:"N/A" }}</td></tr>
+</table>
+{% endif %}
+
+<p><a href="../">&laquo; Back to Queues</a></p>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Open Job Spec{% endblock %}
+{% block content %}
+<h2>OJS Server Status</h2>
+<p>Server URL: <code>{{ ojs_url }}</code></p>
+
+{% if error %}
+<div class="errornote">{{ error }}</div>
+{% else %}
+<p>Status: {% if healthy %}<span style="color:green">Healthy</span>{% else %}<span style="color:red">Unhealthy</span>{% endif %}</p>
+{% endif %}
+
+{% if queues %}
+<h3>Queues</h3>
+<table>
+<thead><tr><th>Queue Name</th></tr></thead>
+<tbody>
+{% for q in queues %}
+<tr><td><a href="queues/{{ q.name|default:q }}/">{{ q.name|default:q }}</a></td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+
+<p><a href="queues/">View All Queues</a> | <a href="dead-letter/">Dead Letter Jobs</a></p>
+{% endblock %}
