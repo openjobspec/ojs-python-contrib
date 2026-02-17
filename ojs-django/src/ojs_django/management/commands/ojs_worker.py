@@ -10,8 +10,8 @@ from django.core.management.base import BaseCommand
 
 import ojs
 
+from ojs_django.conf import get_ojs_settings
 from ojs_django.decorators import get_registry
-from ojs_django.settings import get_ojs_settings
 
 logger = logging.getLogger("ojs_django.worker")
 
