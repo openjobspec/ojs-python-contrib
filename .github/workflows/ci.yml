@@ -40,6 +40,10 @@ jobs:
         working-directory: ${{ matrix.package }}
         run: mypy src/
 
+      - name: Audit dependencies
+        working-directory: ${{ matrix.package }}
+        run: pip install pip-audit && pip-audit
+
       - name: Test
         working-directory: ${{ matrix.package }}
         run: pytest --tb=short -q
