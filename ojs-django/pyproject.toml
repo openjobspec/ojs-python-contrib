@@ -4,21 +4,25 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openjobspec-django"
-version = "0.1.0"
-description = "Django integration for Open Job Spec (OJS)"
+version = "0.2.0"
+description = "Django integration for Open Job Spec (OJS) — background job processing standard"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.11"
 authors = [{ name = "OpenJobSpec Contributors" }]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Framework :: Django",
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: Apache Software License",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Distributed Computing",
+    "Typing :: Typed",
 ]
 dependencies = [
     "openjobspec>=0.1.0",
