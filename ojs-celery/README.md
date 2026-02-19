@@ -20,12 +20,12 @@ from celery import Celery
 app = Celery("myapp", broker="redis://localhost:6379")
 
 @app.task(name="email.send")
-def send_email(to: str, subject: str, body: str):
+def send_email(to: str, subject: str, body: str) -> None:
     # send the email
     print(f"Sending email to {to}")
 
 @app.task(name="report.generate", bind=True, max_retries=3)
-def generate_report(self, report_id: int):
+def generate_report(self, report_id: int) -> None:
     try:
         # generate report
         print(f"Generating report {report_id}")
@@ -45,11 +45,11 @@ from ojs_celery import OJSAdapter
 adapter = OJSAdapter(ojs_url="http://localhost:8080")
 
 @adapter.task(name="email.send")
-def send_email(to: str, subject: str, body: str):
+def send_email(to: str, subject: str, body: str) -> None:
     print(f"Sending email to {to}")
 
 @adapter.task(name="report.generate")
-def generate_report(report_id: int):
+def generate_report(report_id: int) -> None:
     print(f"Generating report {report_id}")
 
 # Same API — works identically
@@ -79,7 +79,7 @@ from ojs_celery.compat import CeleryCompat
 app = CeleryCompat(ojs_url="http://localhost:8080")
 
 @app.task(name="order.process")
-def process_order(order_id: int):
+def process_order(order_id: int) -> None:
     print(f"Processing order {order_id}")
 
 # Dynamic dispatch (no decorator needed)
