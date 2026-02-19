@@ -26,7 +26,7 @@ ojs = OJS(app)
 # Or, with the application factory pattern
 ojs = OJS()
 
-def create_app():
+def create_app() -> Flask:
     app = Flask(__name__)
     app.config["OJS_URL"] = "http://localhost:8080"
     ojs.init_app(app)
@@ -36,11 +36,12 @@ def create_app():
 ### Enqueue Jobs from Route Handlers
 
 ```python
+from flask import request
 from ojs_flask import enqueue
 
 @app.post("/emails")
-def send_email():
-    data = request.get_json()
+def send_email() -> tuple[dict[str, str], int]:
+    data: dict[str, str] = request.get_json()
     job = enqueue(
         "email.send",
         [data["to"], data["subject"], data["body"]],
@@ -53,7 +54,7 @@ Or use the extension instance directly:
 
 ```python
 @app.post("/reports")
-def generate_report():
+def generate_report() -> tuple[dict[str, str], int]:
     job = ojs.enqueue("report.generate", [request.json["type"]], queue="reports")
     return {"job_id": job.id}, 202
 ```
