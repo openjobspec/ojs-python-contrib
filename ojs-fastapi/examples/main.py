@@ -125,3 +125,4 @@ async def get_job(
 async def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok"}
+
