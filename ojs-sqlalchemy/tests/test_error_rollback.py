@@ -156,3 +156,4 @@ class TestEnqueueAfterCommitRollback:
         finally:
             if original is not None:
                 ojs.SyncClient = original  # type: ignore[attr-defined]
+
