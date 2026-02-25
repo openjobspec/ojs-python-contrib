@@ -51,3 +51,4 @@ if __name__ == "__main__":
     # Clean up
     adapter.close()
     print("Done! Jobs are now managed by the OJS server via HTTP.")
+
