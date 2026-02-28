@@ -19,7 +19,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "openjobspec>=0.1.0",
+    "openjobspec>=0.2.0",
     "fastapi>=0.110",
 ]
 
