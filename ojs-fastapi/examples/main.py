@@ -66,7 +66,7 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
 app = FastAPI(
     title="OJS FastAPI Example",
     description="Demonstrates OJS integration with FastAPI",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
