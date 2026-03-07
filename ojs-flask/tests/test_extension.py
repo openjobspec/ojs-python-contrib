@@ -111,3 +111,4 @@ class TestExtensionEnqueue:
             ["/tmp/file.csv"],
             queue="imports",
         )
+
