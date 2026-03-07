@@ -50,3 +50,4 @@ select = ["E", "F", "I", "N", "UP", "B", "SIM", "A", "C4", "DTZ", "T20", "PT", "
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
