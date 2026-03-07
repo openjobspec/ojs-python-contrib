@@ -130,3 +130,4 @@ class TestPriorityMapping:
         send_email.apply_async(args=[], meta={"priority": 10})
         call_kwargs = mock_client.enqueue.call_args[1]
         assert call_kwargs["meta"]["priority"] == 10
+
