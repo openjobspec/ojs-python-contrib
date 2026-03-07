@@ -45,3 +45,4 @@ lifespan-managed workers, and job endpoints.
   endpoint via `Depends()`.
 - **Worker Handlers** — Job handlers are registered on the worker and run in-process
   alongside the FastAPI server.
+
