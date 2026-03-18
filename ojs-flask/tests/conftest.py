@@ -16,6 +16,8 @@ def _install_ojs_mock() -> None:
     mock_ojs.Worker = MagicMock  # type: ignore[attr-defined]
     mock_ojs.Job = MagicMock  # type: ignore[attr-defined]
     mock_ojs.JobContext = MagicMock  # type: ignore[attr-defined]
+    mock_ojs.CronJob = MagicMock  # type: ignore[attr-defined]
+    mock_ojs.JobState = MagicMock  # type: ignore[attr-defined]
     sys.modules["ojs"] = mock_ojs
 
 
