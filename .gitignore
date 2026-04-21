@@ -12,6 +12,9 @@ build/
 # Virtual environments
 .venv/
 venv/
+.consumer/
+/.consumer-*/
+/.certification-relocated/
 
 # Testing
 .pytest_cache/
