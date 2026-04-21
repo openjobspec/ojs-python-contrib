@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -23,27 +26,112 @@ jobs:
     name: ${{ matrix.package }} / Python ${{ matrix.python-version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - uses: actions/setup-python@v5
+      - name: Check out the coordinated SDK source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          repository: openjobspec/ojs-python-sdk
+          ref: main
+          path: .deps/ojs-python-sdk
+
+      - name: Expose SDK at the workspace sibling path
+        run: ln -s "$GITHUB_WORKSPACE/.deps/ojs-python-sdk" "$GITHUB_WORKSPACE/../ojs-python-sdk"
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install package
-        run: pip install -e "./${{ matrix.package }}[dev]"
+      - name: Install locked package environment
+        working-directory: ${{ matrix.package }}
+        run: |
+          python -m pip install "uv==0.11.28"
+          uv sync --locked --python "${{ matrix.python-version }}" --extra dev
 
       - name: Lint
         working-directory: ${{ matrix.package }}
-        run: ruff check .
+        run: uv run --frozen ruff check .
+
+      - name: Format check
+        working-directory: ${{ matrix.package }}
+        run: uv run --frozen ruff format --check .
 
       - name: Type check
         working-directory: ${{ matrix.package }}
-        run: mypy src/
+        run: uv run --frozen mypy src/
 
       - name: Audit dependencies
         working-directory: ${{ matrix.package }}
-        run: pip install pip-audit && pip-audit
+        run: uv run --frozen pip-audit
 
       - name: Test
         working-directory: ${{ matrix.package }}
-        run: pytest --tb=short -q
+        run: uv run --frozen pytest --tb=short -q
+
+  package:
+    name: Package ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: ojs-django
+            distribution: openjobspec-django
+            import-name: ojs_django
+          - package: ojs-flask
+            distribution: openjobspec-flask
+            import-name: ojs_flask
+          - package: ojs-fastapi
+            distribution: openjobspec-fastapi
+            import-name: ojs_fastapi
+          - package: ojs-celery
+            distribution: openjobspec-celery
+            import-name: ojs_celery
+          - package: ojs-sqlalchemy
+            distribution: openjobspec-sqlalchemy
+            import-name: ojs_sqlalchemy
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Check out the coordinated SDK source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          repository: openjobspec/ojs-python-sdk
+          ref: main
+          path: .deps/ojs-python-sdk
+
+      - name: Expose SDK at the workspace sibling path
+        run: ln -s "$GITHUB_WORKSPACE/.deps/ojs-python-sdk" "$GITHUB_WORKSPACE/../ojs-python-sdk"
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        run: python -m pip install "uv==0.11.28"
+
+      - name: Build distributions
+        working-directory: ${{ matrix.package }}
+        run: uv build
+
+      - name: Validate publish payload
+        working-directory: ${{ matrix.package }}
+        run: uv publish --dry-run --trusted-publishing never dist/*
+
+      - name: Install in a clean consumer environment
+        working-directory: ${{ matrix.package }}
+        env:
+          DISTRIBUTION: ${{ matrix.distribution }}
+          IMPORT_NAME: ${{ matrix.import-name }}
+        run: |
+          CONSUMER_DIR="$GITHUB_WORKSPACE/.consumer-${{ matrix.package }}"
+          rm -rf "$CONSUMER_DIR"
+          trap 'rm -rf "$CONSUMER_DIR"' EXIT
+          uv venv "$CONSUMER_DIR" --python 3.13
+          WHEEL=$(find dist -name '*.whl' -print -quit)
+          uv build --wheel "$GITHUB_WORKSPACE/.deps/ojs-python-sdk"
+          SDK_WHEEL=$(find "$GITHUB_WORKSPACE/.deps/ojs-python-sdk/dist" -name '*.whl' -print -quit)
+          uv pip install --python "$CONSUMER_DIR/bin/python" "$SDK_WHEEL"
+          uv pip install --python "$CONSUMER_DIR/bin/python" "$WHEEL"
+          "$CONSUMER_DIR/bin/python" -c "import importlib, importlib.metadata, os, ojs; importlib.import_module(os.environ['IMPORT_NAME']); assert importlib.metadata.version(os.environ['DISTRIBUTION']) == '0.5.0'; assert importlib.metadata.version('openjobspec') == ojs.__version__ == '0.5.0'"
