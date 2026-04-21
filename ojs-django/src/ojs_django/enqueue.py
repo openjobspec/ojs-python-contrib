@@ -19,7 +19,7 @@ def get_client() -> ojs.SyncClient:
 
     The client is lazily created on first call and reused afterward.
     """
-    global _sync_client  # noqa: PLW0603
+    global _sync_client
     if _sync_client is None:
         cfg = get_ojs_settings()
         _sync_client = ojs.SyncClient(cfg.url)

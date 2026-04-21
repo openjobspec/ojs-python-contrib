@@ -7,6 +7,7 @@ Django models).
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import Any
 
@@ -19,6 +20,23 @@ from ojs_django.backend import get_client
 from ojs_django.conf import get_ojs_settings
 
 logger = logging.getLogger("ojs_django.admin")
+
+
+def _base_context(request: HttpRequest, title: str, **extra: Any) -> dict[str, Any]:
+    """Build the shared admin view context (title + staff-permission flag)."""
+    return {
+        "title": title,
+        "has_permission": request.user.is_staff,
+        **extra,
+    }
+
+
+def _with_admin_context(context: dict[str, Any], request: HttpRequest) -> dict[str, Any]:
+    """Merge Django's admin ``each_context``, degrading outside admin URL setup."""
+    with contextlib.suppress(Exception):
+        # Gracefully degrade outside full Django URL setup.
+        context.update(admin.site.each_context(request))
+    return context
 
 
 class OJSAdminSite:
@@ -44,10 +62,7 @@ class OJSAdminView:
     @staticmethod
     def dashboard(request: HttpRequest) -> HttpResponse:
         """OJS dashboard showing server health and queue overview."""
-        context: dict[str, Any] = {
-            "title": "Open Job Spec",
-            "has_permission": request.user.is_staff,
-        }
+        context = _base_context(request, "Open Job Spec")
 
         try:
             client = get_client()
@@ -66,24 +81,16 @@ class OJSAdminView:
             context["error"] = "Could not connect to OJS server"
             context["queues"] = []
 
-        try:
-            context.update(admin.site.each_context(request))
-        except Exception:
-            pass  # Gracefully degrade outside full Django URL setup
-
         return TemplateResponse(
             request,
             "ojs_django/admin/dashboard.html",
-            context,
+            _with_admin_context(context, request),
         )
 
     @staticmethod
     def queues(request: HttpRequest) -> HttpResponse:
         """List all queues with statistics."""
-        context: dict[str, Any] = {
-            "title": "OJS Queues",
-            "has_permission": request.user.is_staff,
-        }
+        context = _base_context(request, "OJS Queues")
 
         try:
             client = get_client()
@@ -102,25 +109,16 @@ class OJSAdminView:
             context["error"] = "Could not connect to OJS server"
             context["queues"] = []
 
-        try:
-            context.update(admin.site.each_context(request))
-        except Exception:
-            pass
-
         return TemplateResponse(
             request,
             "ojs_django/admin/queues.html",
-            context,
+            _with_admin_context(context, request),
         )
 
     @staticmethod
     def queue_detail(request: HttpRequest, queue_name: str) -> HttpResponse:
         """Show details for a specific queue."""
-        context: dict[str, Any] = {
-            "title": f"Queue: {queue_name}",
-            "queue_name": queue_name,
-            "has_permission": request.user.is_staff,
-        }
+        context = _base_context(request, f"Queue: {queue_name}", queue_name=queue_name)
 
         try:
             client = get_client()
@@ -130,24 +128,16 @@ class OJSAdminView:
             logger.exception("Failed to fetch queue detail for %s", queue_name)
             context["error"] = f"Could not fetch queue: {queue_name}"
 
-        try:
-            context.update(admin.site.each_context(request))
-        except Exception:
-            pass
-
         return TemplateResponse(
             request,
             "ojs_django/admin/queue_detail.html",
-            context,
+            _with_admin_context(context, request),
         )
 
     @staticmethod
     def dead_letter(request: HttpRequest) -> HttpResponse:
         """List dead-letter jobs."""
-        context: dict[str, Any] = {
-            "title": "OJS Dead Letter Jobs",
-            "has_permission": request.user.is_staff,
-        }
+        context = _base_context(request, "OJS Dead Letter Jobs")
 
         page = int(request.GET.get("page", 1))
         limit = 50
@@ -164,15 +154,10 @@ class OJSAdminView:
             context["error"] = "Could not connect to OJS server"
             context["jobs"] = []
 
-        try:
-            context.update(admin.site.each_context(request))
-        except Exception:
-            pass
-
         return TemplateResponse(
             request,
             "ojs_django/admin/dead_letter.html",
-            context,
+            _with_admin_context(context, request),
         )
 
 

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
-
 import ojs
+import pytest
 
 from ojs_django.decorators import OJSJobWrapper, _registry, ojs_job
 

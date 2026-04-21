@@ -91,16 +91,13 @@ def get_ojs_settings() -> OJSSettings:
     Reads from the ``OJS`` dict if present, otherwise falls back to
     the legacy flat settings (``OJS_URL``, ``OJS_QUEUES``, etc.).
     """
-    global _cached  # noqa: PLW0603
+    global _cached
     if _cached is not None:
         return _cached
 
     ojs_dict: dict[str, Any] | None = getattr(settings, "OJS", None)
 
-    if ojs_dict is not None:
-        _cached = _from_dict(ojs_dict)
-    else:
-        _cached = _from_flat()
+    _cached = _from_dict(ojs_dict) if ojs_dict is not None else _from_flat()
 
     return _cached
 
@@ -151,5 +148,5 @@ def _from_flat() -> OJSSettings:
 
 def reset_settings() -> None:
     """Clear the cached settings. Useful for testing."""
-    global _cached  # noqa: PLW0603
+    global _cached
     _cached = None

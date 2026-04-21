@@ -63,7 +63,7 @@ class OjsDjangoConfig(AppConfig):
 
 def _register_checks() -> None:
     @register("ojs")
-    def check_ojs_settings(**kwargs: object) -> list[Error]:  # noqa: ARG001
+    def check_ojs_settings(**kwargs: object) -> list[Error]:
         from django.conf import settings
 
         errors: list[Error] = []

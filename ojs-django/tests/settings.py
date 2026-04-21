@@ -1,6 +1,6 @@
 """Minimal Django settings for ojs_django tests."""
 
-SECRET_KEY = "test-secret-key-not-for-production"  # noqa: S105
+SECRET_KEY = "test-secret-key-not-for-production"
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",

@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
+import ojs
 import pytest
 from django.db import transaction
-
-import ojs
 
 from ojs_django.backend import enqueue, enqueue_after_commit, enqueue_at, enqueue_batch
 from ojs_django.conf import reset_settings
@@ -83,7 +82,7 @@ def test_enqueue_at_with_datetime() -> None:
     """enqueue_at() should pass delay_until to the client."""
     mock_client = MagicMock(spec=ojs.SyncClient)
     mock_client.enqueue.return_value = MagicMock(spec=ojs.Job)
-    scheduled = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+    scheduled = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 
     with patch("ojs_django.backend.get_client", return_value=mock_client):
         enqueue_at("report.gen", scheduled, "monthly")
@@ -111,11 +110,14 @@ def test_enqueue_batch_basic() -> None:
     mock_client.enqueue_batch.return_value = [MagicMock(spec=ojs.Job)]
 
     with patch("ojs_django.backend.get_client", return_value=mock_client):
-        result = enqueue_batch([
-            {"type": "email.send", "args": ["a@b.com", "welcome"]},
-            {"type": "email.send", "args": ["c@d.com", "welcome"], "queue": "bulk"},
-        ])
+        result = enqueue_batch(
+            [
+                {"type": "email.send", "args": ["a@b.com", "welcome"]},
+                {"type": "email.send", "args": ["c@d.com", "welcome"], "queue": "bulk"},
+            ]
+        )
 
+    assert len(result) == 1
     mock_client.enqueue_batch.assert_called_once()
     requests = mock_client.enqueue_batch.call_args[0][0]
     assert len(requests) == 2

@@ -15,10 +15,9 @@ import signal
 import sys
 from typing import Any
 
+import ojs
 from django.core.management.base import BaseCommand
 from django.utils.module_loading import autodiscover_modules
-
-import ojs
 
 from ojs_django.conf import get_ojs_settings
 from ojs_django.decorators import get_registry
@@ -27,7 +26,7 @@ logger = logging.getLogger("ojs_django.worker")
 
 
 class Command(BaseCommand):
-    help = "Start an OJS background job worker."  # noqa: A003
+    help = "Start an OJS background job worker."
 
     def add_arguments(self, parser: Any) -> None:
         parser.add_argument(
@@ -110,7 +109,7 @@ class Command(BaseCommand):
 
         for job_type, handler in registry.items():
             worker.handler(job_type, handler)
-            logger.info("Registered handler: %s -> %s", job_type, handler.__qualname__)
+            logger.info("Registered handler: %s -> %s", job_type, handler.fn.__qualname__)
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -118,9 +117,7 @@ class Command(BaseCommand):
                 f"poll_interval={poll_interval}s"
             )
         )
-        self.stdout.write(
-            f"  Handlers: {', '.join(registry.keys()) or '(none)'}"
-        )
+        self.stdout.write(f"  Handlers: {', '.join(registry.keys()) or '(none)'}")
 
         # Install graceful shutdown handlers
         loop = asyncio.new_event_loop()
@@ -142,13 +139,11 @@ class Command(BaseCommand):
             await shutdown_event.wait()
 
             # Graceful shutdown with timeout
-            self.stdout.write(
-                f"Draining active jobs (timeout={shutdown_timeout}s)..."
-            )
+            self.stdout.write(f"Draining active jobs (timeout={shutdown_timeout}s)...")
             try:
                 await asyncio.wait_for(worker.stop(), timeout=shutdown_timeout)
                 self.stdout.write(self.style.SUCCESS("Worker stopped gracefully."))
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self.stderr.write(
                     self.style.ERROR(
                         f"Shutdown timed out after {shutdown_timeout}s. "
