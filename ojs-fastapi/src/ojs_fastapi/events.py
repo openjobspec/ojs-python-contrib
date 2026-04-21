@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
@@ -42,9 +43,13 @@ class OJSEventManager:
 
     def on(self, event_type: str) -> Callable[..., Callable[..., Coroutine[Any, Any, None]]]:
         """Decorator to register an event handler for a specific event type."""
-        def decorator(fn: Callable[..., Coroutine[Any, Any, None]]) -> Callable[..., Coroutine[Any, Any, None]]:
+
+        def decorator(
+            fn: Callable[..., Coroutine[Any, Any, None]],
+        ) -> Callable[..., Coroutine[Any, Any, None]]:
             self._subscriptions.setdefault(event_type, []).append(fn)
             return fn
+
         return decorator
 
     @property
@@ -58,6 +63,7 @@ class OJSEventManager:
 
     async def start(self, client: Any) -> None:
         """Start listening for events from the OJS server."""
+
         async def _listen() -> None:
             try:
                 async for event in await client.subscribe(list(self._subscriptions.keys())):
@@ -78,8 +84,6 @@ class OJSEventManager:
         """Stop listening for events."""
         if self._task is not None:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
             self._task = None

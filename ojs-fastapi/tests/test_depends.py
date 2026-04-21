@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -14,7 +13,7 @@ import pytest
 # Mock the ojs module before any ojs_fastapi imports trigger it
 # ---------------------------------------------------------------------------
 
-_ojs_mock = MagicMock()
+_ojs_mock = sys.modules.get("ojs") or MagicMock()
 sys.modules.setdefault("ojs", _ojs_mock)
 
 from fastapi import Depends, FastAPI  # noqa: E402
@@ -22,7 +21,6 @@ from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 from ojs_fastapi import OJSPlugin, get_ojs_client, ojs_lifespan  # noqa: E402
 from ojs_fastapi.models import EnqueueResponse  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -17,7 +16,6 @@ from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 from ojs_fastapi.depends import OJSPlugin  # noqa: E402
 from ojs_fastapi.health import HealthResponse, create_health_router  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Helpers

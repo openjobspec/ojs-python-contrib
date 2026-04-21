@@ -12,7 +12,6 @@ sys.modules.setdefault("ojs", _ojs_mock)
 
 from ojs_fastapi.cron import CronRegistration, OJSCronBridge  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -55,25 +54,40 @@ def test_registrations_property() -> None:
 
 
 @pytest.mark.asyncio
-async def test_sync_calls_register_cron() -> None:
-    """sync should call client.register_cron for each registration."""
+async def test_sync_calls_register_cron_job() -> None:
+    """sync should call client.register_cron_job for each registration."""
     cron = OJSCronBridge()
-    cron.register("reports.daily", "0 6 * * *", queue="reports")
-    cron.register("cleanup.stale", "0 */4 * * *")
+    metadata = {"tenant": "acme", "trace_context": None}
+    cron.register(
+        "reports.daily",
+        "0 6 * * *",
+        queue="reports",
+        meta=metadata,
+    )
+    default_registration = cron.register("cleanup.stale", "0 */4 * * *", meta=None)
 
     mock_client = AsyncMock()
     mock_result_a = MagicMock(id="cron-1")
     mock_result_b = MagicMock(id="cron-2")
-    mock_client.register_cron = AsyncMock(side_effect=[mock_result_a, mock_result_b])
-
-    _ojs_mock.CronJob = MagicMock(side_effect=lambda **kw: kw)
+    mock_client.register_cron_job = AsyncMock(side_effect=[mock_result_a, mock_result_b])
 
     results = await cron.sync(mock_client)
 
     assert len(results) == 2
     assert results[0].id == "cron-1"
     assert results[1].id == "cron-2"
-    assert mock_client.register_cron.await_count == 2
+    assert mock_client.register_cron_job.await_count == 2
+    # Public registration fields must be forwarded unchanged to the SDK.
+    first_call = mock_client.register_cron_job.await_args_list[0]
+    assert first_call.kwargs["name"] == "reports.daily"
+    assert first_call.kwargs["cron"] == "0 6 * * *"
+    assert first_call.kwargs["job_type"] == "reports.daily"
+    assert first_call.kwargs["queue"] == "reports"
+    assert first_call.kwargs["meta"] is metadata
+
+    second_call = mock_client.register_cron_job.await_args_list[1]
+    assert default_registration.meta == {}
+    assert second_call.kwargs["meta"] is default_registration.meta
 
 
 @pytest.mark.asyncio
@@ -85,15 +99,13 @@ async def test_sync_handles_failure() -> None:
 
     mock_client = AsyncMock()
     mock_result = MagicMock(id="cron-2")
-    mock_client.register_cron = AsyncMock(
+    mock_client.register_cron_job = AsyncMock(
         side_effect=[RuntimeError("server error"), mock_result]
     )
-
-    _ojs_mock.CronJob = MagicMock(side_effect=lambda **kw: kw)
 
     results = await cron.sync(mock_client)
 
     # Only the second registration succeeds
     assert len(results) == 1
     assert results[0].id == "cron-2"
-    assert mock_client.register_cron.await_count == 2
+    assert mock_client.register_cron_job.await_count == 2

@@ -42,4 +42,3 @@ class JobResponse(BaseModel):
     started_at: str | None = Field(default=None, description="ISO 8601 start timestamp")
     completed_at: str | None = Field(default=None, description="ISO 8601 completion timestamp")
     result: Any = Field(default=None, description="Job result data")
-

@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import sys
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
 _ojs_mock = sys.modules.get("ojs") or MagicMock()
 sys.modules.setdefault("ojs", _ojs_mock)
 
-from ojs_fastapi.handlers import OJSHandlerRegistry, JobHandler, ojs_handler  # noqa: E402
 from ojs_fastapi.depends import OJSPlugin  # noqa: E402
+from ojs_fastapi.handlers import JobHandler, OJSHandlerRegistry, ojs_handler  # noqa: E402
 
 
 class TestOJSHandlerRegistry:
@@ -87,7 +87,7 @@ class TestOJSHandlerRegistry:
             concurrency=10,
             poll_interval=2.0,
         )
-        mock_worker.register.assert_called_once_with("email.send", send_email)
+        mock_worker.handler.assert_called_once_with("email.send", send_email)
         assert plugin._worker is mock_worker
 
     def test_attach_registers_all_handlers(self) -> None:
@@ -107,7 +107,7 @@ class TestOJSHandlerRegistry:
 
         registry.attach(plugin)
 
-        assert mock_worker.register.call_count == 2
+        assert mock_worker.handler.call_count == 2
 
 
 class TestOJSHandlerDecorator:
