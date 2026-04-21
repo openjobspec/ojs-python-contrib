@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openjobspec-django"
-version = "0.2.0"
+version = "0.5.0"
 description = "Django integration for Open Job Spec (OJS) — background job processing standard"
 readme = "README.md"
 license = "Apache-2.0"
@@ -25,28 +25,44 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "openjobspec>=0.2.0",
+    "openjobspec>=0.5.0,<0.6.0",
     "django>=4.2",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "cryptography>=42.0",
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-django>=4.8",
     "ruff>=0.4",
-    "mypy>=1.10",
+    "mypy>=1.10,<2.0",
     "django-stubs>=5.0",
+    "pip-audit>=2.7",
 ]
 
 [project.urls]
 Repository = "https://github.com/openjobspec/ojs-python-contrib"
+Changelog = "https://github.com/openjobspec/ojs-python-contrib/blob/main/CHANGELOG.md"
+Issues = "https://github.com/openjobspec/ojs-python-contrib/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ojs_django"]
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.consumer",
+    "/.venv",
+    "/build",
+    "/dist",
+]
+
+[tool.uv.sources]
+openjobspec = { path = "../../ojs-python-sdk", editable = false }
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 asyncio_mode = "auto"
 DJANGO_SETTINGS_MODULE = "tests.settings"
 
