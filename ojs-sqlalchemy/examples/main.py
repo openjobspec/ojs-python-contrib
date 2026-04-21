@@ -11,7 +11,7 @@ Prerequisites:
 from __future__ import annotations
 
 from sqlalchemy import String, create_engine
-from sqlalchemy.orm import Mapped, Session, mapped_column, sessionmaker
+from sqlalchemy.orm import Mapped, mapped_column, sessionmaker
 
 from ojs_sqlalchemy import OJSOutbox, OutboxPublisher, enqueue_after_commit
 from ojs_sqlalchemy.models import Base
@@ -58,7 +58,7 @@ def create_user_with_welcome_email(email: str, name: str) -> None:
         )
 
         session.commit()
-        print(f"Created user {email} and enqueued welcome email job")
+        print(f"Created user {email} and enqueued welcome email job")  # noqa: T201
 
 
 # ── Example 2: Outbox Pattern ──────────────────────────────────
@@ -81,7 +81,7 @@ def create_user_with_outbox(email: str, name: str) -> None:
         )
 
         session.commit()
-        print(f"Created user {email} and wrote outbox entry")
+        print(f"Created user {email} and wrote outbox entry")  # noqa: T201
 
 
 def run_outbox_publisher() -> None:
@@ -91,15 +91,15 @@ def run_outbox_publisher() -> None:
         session_factory=SessionLocal,
     )
     published = publisher.publish_pending()
-    print(f"Published {published} outbox entries")
+    print(f"Published {published} outbox entries")  # noqa: T201
 
 
 # ── Main ────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("=== Example 1: enqueue_after_commit ===")
+    print("=== Example 1: enqueue_after_commit ===")  # noqa: T201
     create_user_with_welcome_email("alice@example.com", "Alice")
 
-    print("\n=== Example 2: Outbox Pattern ===")
+    print("\n=== Example 2: Outbox Pattern ===")  # noqa: T201
     create_user_with_outbox("bob@example.com", "Bob")
     run_outbox_publisher()

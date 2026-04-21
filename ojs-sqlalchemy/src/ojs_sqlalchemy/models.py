@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -46,7 +46,7 @@ class OJSOutboxEntry(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
     )
     published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None
@@ -73,7 +73,4 @@ class OJSOutboxEntry(Base):
         self.meta_json = json.dumps(value)
 
     def __repr__(self) -> str:
-        return (
-            f"OJSOutboxEntry(id={self.id!r}, job_type={self.job_type!r}, "
-            f"status={self.status!r})"
-        )
+        return f"OJSOutboxEntry(id={self.id!r}, job_type={self.job_type!r}, status={self.status!r})"

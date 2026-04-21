@@ -8,15 +8,29 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import event
 from sqlalchemy.orm import Session
 
-if TYPE_CHECKING:
-    import ojs
-
 logger = logging.getLogger(__name__)
+
+# Strong references to in-flight fire-and-forget enqueue tasks so the event
+# loop does not garbage-collect them before they finish (see ruff RUF006).
+_pending_tasks: set[asyncio.Task[None]] = set()
+
+
+def _build_enqueue_kwargs(
+    queue: str,
+    priority: int,
+    meta: dict[str, Any] | None,
+    extra: dict[str, Any],
+) -> dict[str, Any]:
+    """Assemble enqueue keyword arguments, omitting ``meta`` when unset."""
+    kwargs: dict[str, Any] = {"queue": queue, "priority": priority, **extra}
+    if meta is not None:
+        kwargs["meta"] = meta
+    return kwargs
 
 
 def enqueue_after_commit(
@@ -46,9 +60,7 @@ def enqueue_after_commit(
         **kwargs: Additional keyword arguments passed to ``ojs.SyncClient.enqueue``.
     """
     enqueue_args = args or []
-    enqueue_kwargs: dict[str, Any] = {"queue": queue, "priority": priority, **kwargs}
-    if meta is not None:
-        enqueue_kwargs["meta"] = meta
+    enqueue_kwargs = _build_enqueue_kwargs(queue, priority, meta, kwargs)
 
     def _after_commit(session: Session) -> None:
         import ojs
@@ -90,9 +102,7 @@ def enqueue_after_commit_async(
         **kwargs: Additional keyword arguments passed to ``ojs.Client.enqueue``.
     """
     enqueue_args = args or []
-    enqueue_kwargs: dict[str, Any] = {"queue": queue, "priority": priority, **kwargs}
-    if meta is not None:
-        enqueue_kwargs["meta"] = meta
+    enqueue_kwargs = _build_enqueue_kwargs(queue, priority, meta, kwargs)
 
     async def _do_enqueue() -> None:
         import ojs
@@ -107,7 +117,9 @@ def enqueue_after_commit_async(
     def _after_commit(session: Session) -> None:
         try:
             loop = asyncio.get_running_loop()
-            loop.create_task(_do_enqueue())
+            task = loop.create_task(_do_enqueue())
+            _pending_tasks.add(task)
+            task.add_done_callback(_pending_tasks.discard)
         except RuntimeError:
             asyncio.run(_do_enqueue())
 

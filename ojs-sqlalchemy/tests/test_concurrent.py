@@ -14,9 +14,9 @@ _mock_ojs.SyncClient = MagicMock  # type: ignore[attr-defined]
 _mock_ojs.Client = MagicMock  # type: ignore[attr-defined]
 sys.modules.setdefault("ojs", _mock_ojs)
 
-from ojs_sqlalchemy.enqueue import enqueue_after_commit
-from ojs_sqlalchemy.models import Base, OJSOutboxEntry
-from ojs_sqlalchemy.outbox import OJSOutbox
+from ojs_sqlalchemy.enqueue import enqueue_after_commit  # noqa: E402
+from ojs_sqlalchemy.models import Base, OJSOutboxEntry  # noqa: E402
+from ojs_sqlalchemy.outbox import OJSOutbox  # noqa: E402
 
 
 def _make_session_factory() -> sessionmaker[Session]:
@@ -44,7 +44,6 @@ class TestMultipleEnqueuesPerSession:
 
     def test_multiple_after_commit_listeners(self) -> None:
         factory = _make_session_factory()
-        calls: list[str] = []
 
         mock_client = MagicMock()
         mock_sync_client = MagicMock()
@@ -52,6 +51,7 @@ class TestMultipleEnqueuesPerSession:
         mock_sync_client.return_value.__exit__ = MagicMock(return_value=False)
 
         import ojs
+
         original = getattr(ojs, "SyncClient", None)
         ojs.SyncClient = mock_sync_client  # type: ignore[attr-defined]
         try:

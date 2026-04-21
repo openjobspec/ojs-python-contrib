@@ -15,9 +15,9 @@ _mock_ojs.SyncClient = MagicMock  # type: ignore[attr-defined]
 _mock_ojs.Client = MagicMock  # type: ignore[attr-defined]
 sys.modules.setdefault("ojs", _mock_ojs)
 
-from ojs_sqlalchemy.enqueue import enqueue_after_commit
-from ojs_sqlalchemy.models import Base, OJSOutboxEntry
-from ojs_sqlalchemy.outbox import OJSOutbox
+from ojs_sqlalchemy.enqueue import enqueue_after_commit  # noqa: E402
+from ojs_sqlalchemy.models import Base, OJSOutboxEntry  # noqa: E402
+from ojs_sqlalchemy.outbox import OJSOutbox  # noqa: E402
 
 
 def _make_session() -> tuple[sessionmaker[Session], None]:

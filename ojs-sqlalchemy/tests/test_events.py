@@ -11,12 +11,12 @@ _mock_ojs.SyncClient = MagicMock  # type: ignore[attr-defined]
 _mock_ojs.Client = MagicMock  # type: ignore[attr-defined]
 sys.modules.setdefault("ojs", _mock_ojs)
 
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import pytest  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
 
-from ojs_sqlalchemy.events import JobStateEvent, OJSEventListener
-from ojs_sqlalchemy.models import Base, OJSOutboxEntry
+from ojs_sqlalchemy.events import JobStateEvent, OJSEventListener  # noqa: E402
+from ojs_sqlalchemy.models import Base, OJSOutboxEntry  # noqa: E402
 
 
 def _make_session_factory() -> sessionmaker:

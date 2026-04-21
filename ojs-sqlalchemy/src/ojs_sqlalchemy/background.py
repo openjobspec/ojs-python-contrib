@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import logging
 import threading
-import time
 from typing import Any
 
 from .outbox import OutboxPublisher
@@ -76,9 +75,7 @@ class BackgroundOutboxPublisher:
             daemon=True,
         )
         self._thread.start()
-        logger.info(
-            "Background outbox publisher started (interval=%.1fs)", self._flush_interval
-        )
+        logger.info("Background outbox publisher started (interval=%.1fs)", self._flush_interval)
 
     def stop(self, timeout: float = 10.0) -> None:
         """Stop the background publisher."""
@@ -106,9 +103,7 @@ class BackgroundOutboxPublisher:
             except Exception:
                 consecutive_errors += 1
                 self._stats.total_errors += 1
-                logger.exception(
-                    "Background publisher error (attempt %d)", consecutive_errors
-                )
+                logger.exception("Background publisher error (attempt %d)", consecutive_errors)
                 if consecutive_errors >= self._max_retries:
                     delay = min(self._retry_delay * consecutive_errors, 60.0)
                     self._stop_event.wait(delay)

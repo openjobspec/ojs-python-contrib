@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import ModuleType
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
-from sqlalchemy import create_engine, select, update
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
 _mock_ojs = ModuleType("ojs")
@@ -16,8 +15,8 @@ _mock_ojs.SyncClient = MagicMock  # type: ignore[attr-defined]
 _mock_ojs.Client = MagicMock  # type: ignore[attr-defined]
 sys.modules.setdefault("ojs", _mock_ojs)
 
-from ojs_sqlalchemy.models import Base, OJSOutboxEntry
-from ojs_sqlalchemy.outbox import OJSOutbox, OutboxPublisher
+from ojs_sqlalchemy.models import Base, OJSOutboxEntry  # noqa: E402
+from ojs_sqlalchemy.outbox import OJSOutbox, OutboxPublisher  # noqa: E402
 
 
 def _make_session_factory() -> sessionmaker[Session]:
@@ -52,6 +51,7 @@ class TestOutboxPublishPending:
         mock_sync_client.return_value.__exit__ = MagicMock(return_value=False)
 
         import ojs
+
         original = getattr(ojs, "SyncClient", None)
         ojs.SyncClient = mock_sync_client  # type: ignore[attr-defined]
         try:
@@ -81,6 +81,7 @@ class TestOutboxPublishPending:
         mock_sync_client.return_value.__exit__ = MagicMock(return_value=False)
 
         import ojs
+
         original = getattr(ojs, "SyncClient", None)
         ojs.SyncClient = mock_sync_client  # type: ignore[attr-defined]
         try:
@@ -116,6 +117,7 @@ class TestOutboxPublishPending:
         mock_sync_client.return_value.__exit__ = MagicMock(return_value=False)
 
         import ojs
+
         original = getattr(ojs, "SyncClient", None)
         ojs.SyncClient = mock_sync_client  # type: ignore[attr-defined]
         try:
@@ -150,6 +152,7 @@ class TestOutboxPublishPending:
         mock_sync_client.return_value.__exit__ = MagicMock(return_value=False)
 
         import ojs
+
         original = getattr(ojs, "SyncClient", None)
         ojs.SyncClient = mock_sync_client  # type: ignore[attr-defined]
         try:
@@ -176,7 +179,7 @@ class TestOutboxCleanup:
             entry = OJSOutboxEntry(
                 job_type="old.job",
                 status="published",
-                published_at=datetime(2020, 1, 1, tzinfo=timezone.utc),
+                published_at=datetime(2020, 1, 1, tzinfo=UTC),
             )
             session.add(entry)
             session.commit()
@@ -199,7 +202,7 @@ class TestOutboxCleanup:
             entry = OJSOutboxEntry(
                 job_type="recent.job",
                 status="published",
-                published_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
             )
             session.add(entry)
             session.commit()
