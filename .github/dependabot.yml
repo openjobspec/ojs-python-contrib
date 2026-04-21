@@ -1,7 +1,12 @@
 version: 2
 updates:
   - package-ecosystem: "pip"
-    directory: "/"
+    directories:
+      - "/ojs-django"
+      - "/ojs-flask"
+      - "/ojs-fastapi"
+      - "/ojs-celery"
+      - "/ojs-sqlalchemy"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
