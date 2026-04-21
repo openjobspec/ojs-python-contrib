@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,7 +12,7 @@ from flask.testing import FlaskCliRunner
 from ojs_flask import OJS
 
 
-@pytest.fixture()
+@pytest.fixture
 def app() -> Flask:
     app = Flask(__name__)
     app.config["TESTING"] = True
@@ -19,7 +20,7 @@ def app() -> Flask:
     return app
 
 
-@pytest.fixture()
+@pytest.fixture
 def runner(app: Flask) -> FlaskCliRunner:
     return app.test_cli_runner()
 
@@ -67,7 +68,7 @@ class TestWorkerCommand:
 
         # Simulate immediate KeyboardInterrupt to avoid blocking
         with patch("signal.pause", side_effect=KeyboardInterrupt):
-            result = runner.invoke(args=["ojs", "worker"])
+            runner.invoke(args=["ojs", "worker"])
 
         mock_worker.start.assert_called_once()
         call_kwargs = mock_worker.start.call_args
@@ -83,13 +84,45 @@ class TestWorkerCommand:
         mock_worker_cls.return_value = mock_worker
 
         with patch("signal.pause", side_effect=KeyboardInterrupt):
-            result = runner.invoke(
-                args=["ojs", "worker", "--queues", "email,reports", "--concurrency", "5"]
-            )
+            runner.invoke(args=["ojs", "worker", "--queues", "email,reports", "--concurrency", "5"])
 
         call_kwargs = mock_worker.start.call_args
         assert call_kwargs.kwargs["queues"] == ["email", "reports"]
         assert call_kwargs.kwargs["concurrency"] == 5
+
+    @patch("ojs_flask.cli.FlaskOJSWorker")
+    def test_worker_command_forwards_extension(
+        self, mock_worker_cls: MagicMock, runner: FlaskCliRunner, app: Flask
+    ) -> None:
+        """Worker command must forward the OJS extension so handlers are visible."""
+        mock_worker = MagicMock()
+        mock_worker_cls.return_value = mock_worker
+
+        with patch("signal.pause", side_effect=KeyboardInterrupt):
+            runner.invoke(args=["ojs", "worker"])
+
+        assert mock_worker_cls.call_args.kwargs["ojs_ext"] is app.extensions["ojs_extension"]
+
+
+class TestStatusCommand:
+    """Tests for the 'ojs status' CLI command."""
+
+    @patch("ojs_flask.cli.get_client")
+    def test_status_command_uses_queue_name(
+        self, mock_get_client: MagicMock, runner: FlaskCliRunner
+    ) -> None:
+        """Status command must call queue_stats with the queue name, not the object."""
+        mock_client = MagicMock()
+        mock_client.health.return_value = {"status": "ok"}
+        mock_client.list_queues.return_value = [SimpleNamespace(name="emails")]
+        mock_client.queue_stats.return_value = {"pending": 2}
+        mock_get_client.return_value = mock_client
+
+        result = runner.invoke(args=["ojs", "status"])
+
+        assert result.exit_code == 0
+        mock_client.queue_stats.assert_called_once_with("emails")
+        assert "emails" in result.output
 
 
 class TestCronCommand:
@@ -129,9 +162,7 @@ class TestCronCommand:
         )
 
     @patch("ojs_flask.cli.get_client")
-    def test_cron_command_failure(
-        self, mock_get_client: MagicMock, runner: FlaskCliRunner
-    ) -> None:
+    def test_cron_command_failure(self, mock_get_client: MagicMock, runner: FlaskCliRunner) -> None:
         """Cron command should report errors on failure."""
         mock_client = MagicMock()
         mock_client.enqueue.side_effect = ConnectionError("Connection refused")

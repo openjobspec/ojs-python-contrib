@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import ojs
 from flask import current_app
@@ -15,11 +15,10 @@ def get_client() -> ojs.SyncClient:
         RuntimeError: If the OJS extension has not been initialized.
     """
     try:
-        return current_app.extensions["ojs"]  # type: ignore[return-value]
+        return cast(ojs.SyncClient, current_app.extensions["ojs"])
     except KeyError:
         raise RuntimeError(
-            "OJS extension not initialized. "
-            "Call OJS(app) or OJS.init_app(app) first."
+            "OJS extension not initialized. Call OJS(app) or OJS.init_app(app) first."
         ) from None
 
 

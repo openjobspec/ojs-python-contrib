@@ -11,7 +11,7 @@ from flask import Flask
 from ojs_flask import OJS, enqueue, get_client
 
 
-@pytest.fixture()
+@pytest.fixture
 def app() -> Flask:
     """Create a minimal Flask application for testing."""
     app = Flask(__name__)
@@ -111,4 +111,3 @@ class TestExtensionEnqueue:
             ["/tmp/file.csv"],
             queue="imports",
         )
-

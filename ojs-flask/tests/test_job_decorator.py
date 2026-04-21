@@ -8,7 +8,7 @@ from flask import Flask
 from ojs_flask import OJS
 
 
-@pytest.fixture()
+@pytest.fixture
 def app() -> Flask:
     app = Flask(__name__)
     app.config["TESTING"] = True

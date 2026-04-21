@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, Response, jsonify
 
 
 def create_health_blueprint(url_prefix: str = "/ojs") -> Blueprint:
@@ -26,7 +26,7 @@ def create_health_blueprint(url_prefix: str = "/ojs") -> Blueprint:
     bp = Blueprint("ojs_health", __name__, url_prefix=url_prefix)
 
     @bp.route("/health")
-    def health():  # type: ignore[return-value]
+    def health() -> tuple[Response, int]:
         """Health check endpoint that pings the OJS server."""
         from ojs_flask.helpers import get_client
 
@@ -38,7 +38,7 @@ def create_health_blueprint(url_prefix: str = "/ojs") -> Blueprint:
             return jsonify({"status": "unhealthy", "error": str(exc)}), 503
 
     @bp.route("/status")
-    def status():  # type: ignore[return-value]
+    def status() -> tuple[Response, int]:
         """Detailed OJS status with queue statistics."""
         from ojs_flask.helpers import get_client
 
@@ -48,14 +48,16 @@ def create_health_blueprint(url_prefix: str = "/ojs") -> Blueprint:
             queue_info = []
             for q in queues:
                 try:
-                    stats = client.queue_stats(q)
-                    queue_info.append({"name": q, "stats": stats})
+                    stats = client.queue_stats(q.name)
+                    queue_info.append({"name": q.name, "stats": stats})
                 except Exception:
-                    queue_info.append({"name": q, "stats": None})
-            return jsonify({
-                "status": "healthy",
-                "queues": queue_info,
-            }), 200
+                    queue_info.append({"name": q.name, "stats": None})
+            return jsonify(
+                {
+                    "status": "healthy",
+                    "queues": queue_info,
+                }
+            ), 200
         except Exception as exc:
             return jsonify({"status": "unhealthy", "error": str(exc)}), 503
 

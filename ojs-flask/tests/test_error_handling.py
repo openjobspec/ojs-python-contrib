@@ -10,7 +10,7 @@ from flask import Flask
 from ojs_flask import OJS, enqueue, get_client
 
 
-@pytest.fixture()
+@pytest.fixture
 def app() -> Flask:
     app = Flask(__name__)
     app.config["TESTING"] = True
@@ -31,14 +31,12 @@ class TestClientAccessErrors:
 
     def test_client_without_init_raises_with_message(self, app: Flask) -> None:
         ext = OJS()
-        with app.app_context():
-            with pytest.raises(RuntimeError, match="OJS extension not initialized"):
-                _ = ext.client
+        with app.app_context(), pytest.raises(RuntimeError, match="OJS extension not initialized"):
+            _ = ext.client
 
     def test_get_client_without_init_raises_with_message(self, app: Flask) -> None:
-        with app.app_context():
-            with pytest.raises(RuntimeError, match="OJS extension not initialized"):
-                get_client()
+        with app.app_context(), pytest.raises(RuntimeError, match="OJS extension not initialized"):
+            get_client()
 
 
 class TestEnqueueErrors:
@@ -49,9 +47,8 @@ class TestEnqueueErrors:
             enqueue("email.send", ["user@example.com"])
 
     def test_enqueue_without_extension_raises(self, app: Flask) -> None:
-        with app.app_context():
-            with pytest.raises(RuntimeError, match="OJS extension not initialized"):
-                enqueue("email.send", ["user@example.com"])
+        with app.app_context(), pytest.raises(RuntimeError, match="OJS extension not initialized"):
+            enqueue("email.send", ["user@example.com"])
 
     @patch("ojs_flask.helpers.get_client")
     def test_enqueue_propagates_client_error(self, mock_get_client: MagicMock) -> None:

@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
 import pytest
 from flask import Flask
 
 from ojs_flask import OJS, get_client
 
 
-@pytest.fixture()
+@pytest.fixture
 def app1() -> Flask:
     app = Flask("app1")
     app.config["TESTING"] = True
@@ -18,7 +16,7 @@ def app1() -> Flask:
     return app
 
 
-@pytest.fixture()
+@pytest.fixture
 def app2() -> Flask:
     app = Flask("app2")
     app.config["TESTING"] = True
@@ -55,9 +53,7 @@ class TestMultipleApps:
         assert app1.config["OJS_URL"] == "http://ojs-1:8080"
         assert app2.config["OJS_URL"] == "http://ojs-2:9090"
 
-    def test_get_client_returns_correct_app_client(
-        self, app1: Flask, app2: Flask
-    ) -> None:
+    def test_get_client_returns_correct_app_client(self, app1: Flask, app2: Flask) -> None:
         ext = OJS()
         ext.init_app(app1)
         ext.init_app(app2)
