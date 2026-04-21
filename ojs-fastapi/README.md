@@ -1,6 +1,6 @@
 # openjobspec-fastapi
 
-FastAPI integration for [Open Job Spec (OJS)](https://github.com/openjobspec/openjobspec) —
+FastAPI integration for [Open Job Spec (OJS)](https://github.com/openjobspec/spec) —
 dependency injection, lifespan-managed workers, and Pydantic model bridging.
 
 ## Installation
@@ -24,6 +24,7 @@ plugin = OJSPlugin(url="http://localhost:8080")
 
 app = FastAPI()
 app.state.ojs_plugin = plugin
+
 
 @app.post("/jobs", response_model=EnqueueResponse)
 async def enqueue_job(
@@ -50,16 +51,19 @@ plugin = OJSPlugin(url="http://localhost:8080", queues=["default", "emails"])
 worker = ojs.Worker(plugin.url, queues=plugin.queues)
 plugin._worker = worker
 
+
 @worker.register("email.send")
 async def handle_email(ctx: ojs.JobContext) -> dict:
     to = ctx.args[0]
     print(f"Sending email to {to}")
     return {"sent": True}
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with ojs_lifespan(app, plugin=plugin) as state:
         yield state
+
 
 app = FastAPI(lifespan=lifespan)
 ```
@@ -100,4 +104,3 @@ mypy src/
 ## License
 
 Apache-2.0
-

@@ -1,5 +1,5 @@
 # Open Job Spec — Python Contrib
-[![Stability: beta](https://img.shields.io/badge/stability-beta-yellow.svg)](https://github.com/openjobspec/openjobspec/blob/main/STABILITY.md)
+[![Stability: beta](https://img.shields.io/badge/stability-beta-yellow.svg)](https://openjobspec.org)
 
 [![CI](https://github.com/openjobspec/ojs-python-contrib/actions/workflows/ci.yml/badge.svg)](https://github.com/openjobspec/ojs-python-contrib/actions/workflows/ci.yml)
 
@@ -53,9 +53,8 @@ make format-all
 ## Requirements
 
 - Python >= 3.11
-- [openjobspec](https://github.com/openjobspec/ojs-python-sdk) >= 0.1.0
+- [openjobspec](https://github.com/openjobspec/ojs-python-sdk) >= 0.5.0, < 0.6.0
 
 ## License
 
 Apache License 2.0 — see [LICENSE](./LICENSE).
-
