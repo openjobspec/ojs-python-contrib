@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 import datetime
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 import ojs
+
+
+def _countdown_to_delay_until(countdown: float) -> str:
+    """Convert a Celery countdown (seconds from now) to an ISO 8601 timestamp."""
+    delay_until = datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=countdown)
+    return delay_until.isoformat()
 
 
 @dataclass
@@ -54,10 +61,7 @@ class OJSTask:
         if job_meta:
             enqueue_kwargs["meta"] = job_meta
         if countdown is not None:
-            delay_until = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-                seconds=countdown
-            )
-            enqueue_kwargs["delay_until"] = delay_until.isoformat()
+            enqueue_kwargs["delay_until"] = _countdown_to_delay_until(countdown)
 
         return self._adapter.enqueue(self.name, job_args, **enqueue_kwargs)
 
@@ -140,14 +144,14 @@ def ojs_task(
 
         send_email.delay("user@example.com", "Hello!")
     """
-    global _default_adapter  # noqa: PLW0603
+    global _default_adapter
 
     if _default_adapter is None or _default_adapter.ojs_url != ojs_url:
         _default_adapter = OJSAdapter(ojs_url=ojs_url)
 
     def decorator(func: Callable[..., Any]) -> OJSTask:
         task_name = name or f"{func.__module__}.{func.__qualname__}"
-        return _default_adapter.task(name=task_name)(func)  # type: ignore[union-attr]
+        return _default_adapter.task(name=task_name)(func)
 
     if fn is not None:
         return decorator(fn)

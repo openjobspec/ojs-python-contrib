@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import MagicMock
-
-import pytest
 
 from ojs_celery.adapter import OJSAdapter, OJSTask
 from ojs_celery.migration import migrate_task
@@ -47,9 +44,7 @@ class TestMigrateTask:
 
         ojs_task = migrate_task(celery_task, adapter=adapter)
         ojs_task.delay("user@example.com")
-        mock_client.enqueue.assert_called_once_with(
-            "email.send", ["user@example.com"]
-        )
+        mock_client.enqueue.assert_called_once_with("email.send", ["user@example.com"])
 
     def test_migrate_task_without_run_attribute(self) -> None:
         """If the task doesn't have .run, use the task object itself."""

@@ -28,7 +28,7 @@ def _build_mock_ojs() -> types.ModuleType:
             self.enqueue = MagicMock(return_value=Job())
             self.close = MagicMock()
 
-        def __enter__(self) -> "SyncClient":
+        def __enter__(self) -> SyncClient:
             return self
 
         def __exit__(self, *args: Any) -> None:

@@ -12,42 +12,42 @@ adapter = OJSAdapter(ojs_url="http://localhost:8080")
 @adapter.task(name="email.send")
 def send_email(to: str, subject: str, body: str) -> dict:
     """Send an email notification."""
-    print(f"Sending email to {to}: {subject}")
+    print(f"Sending email to {to}: {subject}")  # noqa: T201
     return {"status": "sent", "to": to}
 
 
 @adapter.task(name="report.generate")
-def generate_report(report_id: int, format: str = "pdf") -> dict:
+def generate_report(report_id: int, format: str = "pdf") -> dict:  # noqa: A002
     """Generate a report."""
-    print(f"Generating {format} report #{report_id}")
+    print(f"Generating {format} report #{report_id}")  # noqa: T201
     return {"report_id": report_id, "format": format, "status": "complete"}
 
 
 @adapter.task(name="data.cleanup")
 def cleanup_old_data(days: int = 30) -> dict:
     """Clean up data older than N days."""
-    print(f"Cleaning up data older than {days} days")
+    print(f"Cleaning up data older than {days} days")  # noqa: T201
     return {"deleted_count": 42}
 
 
 if __name__ == "__main__":
-    print("=== OJS Task Enqueue Examples ===\n")
+    print("=== OJS Task Enqueue Examples ===\n")  # noqa: T201
 
     # Same .delay() API — no changes needed
-    print("1. send_email.delay('user@example.com', 'Welcome', 'Hello!')")
+    print("1. send_email.delay('user@example.com', 'Welcome', 'Hello!')")  # noqa: T201
     job = send_email.delay("user@example.com", "Welcome", "Hello!")
-    print(f"   Enqueued job: {job.id}\n")
+    print(f"   Enqueued job: {job.id}\n")  # noqa: T201
 
     # Same .apply_async() API — queue and countdown work identically
-    print("2. generate_report.apply_async(args=[42], queue='reports', countdown=300)")
+    print("2. generate_report.apply_async(args=[42], queue='reports', countdown=300)")  # noqa: T201
     job = generate_report.apply_async(args=[42], queue="reports", countdown=300)
-    print(f"   Enqueued job: {job.id}\n")
+    print(f"   Enqueued job: {job.id}\n")  # noqa: T201
 
     # Direct task execution still works
-    print("3. cleanup_old_data(90)  # direct call")
+    print("3. cleanup_old_data(90)  # direct call")  # noqa: T201
     result = cleanup_old_data(90)
-    print(f"   Result: {result}\n")
+    print(f"   Result: {result}\n")  # noqa: T201
 
     # Clean up
     adapter.close()
-    print("Done! Jobs are now managed by the OJS server via HTTP.")
+    print("Done! Jobs are now managed by the OJS server via HTTP.")  # noqa: T201

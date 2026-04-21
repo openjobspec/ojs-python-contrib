@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -20,7 +19,7 @@ class FakeJob:
     state: str = "available"
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_client() -> MagicMock:
     """Create a mock OJS SyncClient."""
     client = MagicMock()
@@ -28,7 +27,7 @@ def mock_client() -> MagicMock:
     return client
 
 
-@pytest.fixture()
+@pytest.fixture
 def adapter(mock_client: MagicMock) -> OJSAdapter:
     """Create an OJSAdapter with a mocked client."""
     a = OJSAdapter(ojs_url="http://localhost:8080")
@@ -60,7 +59,9 @@ class TestOJSTask:
         def my_function() -> None:
             pass
 
-        expected_suffix = "test_adapter.TestOJSTask.test_task_default_name_from_function.<locals>.my_function"
+        expected_suffix = (
+            "test_adapter.TestOJSTask.test_task_default_name_from_function.<locals>.my_function"
+        )
         assert my_function.name.endswith(expected_suffix)
 
     def test_task_direct_call(self, adapter: OJSAdapter) -> None:
@@ -74,23 +75,17 @@ class TestOJSTask:
 class TestDelay:
     """Tests for OJSTask.delay()."""
 
-    def test_delay_calls_enqueue(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_delay_calls_enqueue(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="email.send")
         def send_email(to: str, subject: str) -> None:
             pass
 
         result = send_email.delay("user@example.com", "Hello")
 
-        mock_client.enqueue.assert_called_once_with(
-            "email.send", ["user@example.com", "Hello"]
-        )
+        mock_client.enqueue.assert_called_once_with("email.send", ["user@example.com", "Hello"])
         assert result.id == "test-job-id"
 
-    def test_delay_no_args(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_delay_no_args(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="cleanup.run")
         def run_cleanup() -> None:
             pass
@@ -102,9 +97,7 @@ class TestDelay:
 class TestApplyAsync:
     """Tests for OJSTask.apply_async()."""
 
-    def test_apply_async_with_args(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_apply_async_with_args(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="report.generate")
         def generate_report(report_id: int) -> None:
             pass
@@ -112,17 +105,13 @@ class TestApplyAsync:
         generate_report.apply_async(args=[42])
         mock_client.enqueue.assert_called_once_with("report.generate", [42])
 
-    def test_apply_async_with_queue(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_apply_async_with_queue(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="report.generate")
         def generate_report(report_id: int) -> None:
             pass
 
         generate_report.apply_async(args=[42], queue="reports")
-        mock_client.enqueue.assert_called_once_with(
-            "report.generate", [42], queue="reports"
-        )
+        mock_client.enqueue.assert_called_once_with("report.generate", [42], queue="reports")
 
     def test_apply_async_with_kwargs_in_meta(
         self, adapter: OJSAdapter, mock_client: MagicMock
@@ -141,9 +130,7 @@ class TestApplyAsync:
             meta={"kwargs": {"priority": "high"}},
         )
 
-    def test_apply_async_with_countdown(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_apply_async_with_countdown(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="email.send")
         def send_email() -> None:
             pass
@@ -154,21 +141,15 @@ class TestApplyAsync:
         assert call_kwargs[0] == ("email.send", ["user@example.com"])
         assert "delay_until" in call_kwargs[1]
 
-    def test_apply_async_with_meta(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_apply_async_with_meta(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="email.send")
         def send_email() -> None:
             pass
 
         send_email.apply_async(args=[], meta={"source": "api"})
-        mock_client.enqueue.assert_called_once_with(
-            "email.send", [], meta={"source": "api"}
-        )
+        mock_client.enqueue.assert_called_once_with("email.send", [], meta={"source": "api"})
 
-    def test_apply_async_empty_args(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_apply_async_empty_args(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="cleanup.run")
         def run_cleanup() -> None:
             pass
