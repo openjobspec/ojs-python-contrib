@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -47,34 +48,30 @@ async def ojs_lifespan(
 
     # Create and open the client
     client = ojs.Client(plugin.url)
-    plugin._client = client  # noqa: SLF001
+    plugin._client = client
 
     worker_task: asyncio.Task[None] | None = None
 
     async with client:
         # Start worker if handlers have been registered
-        if plugin._worker is not None:  # noqa: SLF001
-            worker = plugin._worker  # noqa: SLF001
+        if plugin._worker is not None:
+            worker = plugin._worker
 
             async def _run_worker() -> None:
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await worker.start()
-                except asyncio.CancelledError:
-                    pass
 
             worker_task = asyncio.create_task(_run_worker())
 
         try:
-            yield {"ojs_client": client, "ojs_worker": plugin._worker}  # noqa: SLF001
+            yield {"ojs_client": client, "ojs_worker": plugin._worker}
         finally:
             # Shutdown worker
-            if plugin._worker is not None:  # noqa: SLF001
-                await plugin._worker.stop()  # noqa: SLF001
+            if plugin._worker is not None:
+                await plugin._worker.stop()
             if worker_task is not None:
                 worker_task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await worker_task
-                except asyncio.CancelledError:
-                    pass
 
-            plugin._client = None  # noqa: SLF001
+            plugin._client = None

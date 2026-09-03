@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,7 +14,7 @@ from ojs_flask import OJS
 from ojs_flask.health import create_health_blueprint
 
 
-@pytest.fixture()
+@pytest.fixture
 def app() -> Flask:
     app = Flask(__name__)
     app.config["TESTING"] = True
@@ -22,7 +23,7 @@ def app() -> Flask:
     return app
 
 
-@pytest.fixture()
+@pytest.fixture
 def client(app: Flask) -> FlaskClient:
     return app.test_client()
 
@@ -44,9 +45,7 @@ class TestHealthEndpoint:
         assert data["status"] == "healthy"
         assert data["queues"] == 2
 
-    def test_health_endpoint_returns_unhealthy_on_error(
-        self, client: FlaskClient
-    ) -> None:
+    def test_health_endpoint_returns_unhealthy_on_error(self, client: FlaskClient) -> None:
         """Health endpoint should return 503 when OJS server is unreachable."""
         with patch("ojs_flask.helpers.get_client") as mock_get_client:
             mock_get_client.side_effect = ConnectionError("Connection refused")
@@ -58,9 +57,7 @@ class TestHealthEndpoint:
         assert data["status"] == "unhealthy"
         assert "Connection refused" in data["error"]
 
-    def test_health_endpoint_unhealthy_on_list_queues_error(
-        self, client: FlaskClient
-    ) -> None:
+    def test_health_endpoint_unhealthy_on_list_queues_error(self, client: FlaskClient) -> None:
         """Health endpoint should return 503 when list_queues fails."""
         with patch("ojs_flask.helpers.get_client") as mock_get_client:
             mock_client = MagicMock()
@@ -81,7 +78,10 @@ class TestStatusEndpoint:
         """Status endpoint should return detailed queue information."""
         with patch("ojs_flask.helpers.get_client") as mock_get_client:
             mock_client = MagicMock()
-            mock_client.list_queues.return_value = ["default", "email"]
+            mock_client.list_queues.return_value = [
+                SimpleNamespace(name="default"),
+                SimpleNamespace(name="email"),
+            ]
             mock_client.queue_stats.side_effect = [
                 {"pending": 5, "active": 2},
                 {"pending": 0, "active": 1},
@@ -97,6 +97,9 @@ class TestStatusEndpoint:
         assert data["queues"][0]["name"] == "default"
         assert data["queues"][0]["stats"] == {"pending": 5, "active": 2}
         assert data["queues"][1]["name"] == "email"
+        # queue_stats must be called with the queue *name*, not the Queue object.
+        mock_client.queue_stats.assert_any_call("default")
+        mock_client.queue_stats.assert_any_call("email")
 
     def test_status_endpoint_unhealthy_on_error(self, client: FlaskClient) -> None:
         """Status endpoint should return 503 when OJS server is unreachable."""

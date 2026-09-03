@@ -11,8 +11,7 @@ import pytest
 _ojs_mock = sys.modules.get("ojs") or MagicMock()
 sys.modules.setdefault("ojs", _ojs_mock)
 
-from ojs_fastapi.events import EventSubscription, OJSEventManager  # noqa: E402
-
+from ojs_fastapi.events import OJSEventManager  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Tests

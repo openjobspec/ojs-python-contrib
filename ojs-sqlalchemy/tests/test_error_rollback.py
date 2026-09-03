@@ -14,9 +14,9 @@ _mock_ojs.SyncClient = MagicMock  # type: ignore[attr-defined]
 _mock_ojs.Client = MagicMock  # type: ignore[attr-defined]
 sys.modules.setdefault("ojs", _mock_ojs)
 
-from ojs_sqlalchemy.enqueue import enqueue_after_commit
-from ojs_sqlalchemy.models import Base, OJSOutboxEntry
-from ojs_sqlalchemy.outbox import OJSOutbox
+from ojs_sqlalchemy.enqueue import enqueue_after_commit  # noqa: E402
+from ojs_sqlalchemy.models import Base, OJSOutboxEntry  # noqa: E402
+from ojs_sqlalchemy.outbox import OJSOutbox  # noqa: E402
 
 
 def _make_session_factory() -> sessionmaker[Session]:
@@ -72,6 +72,7 @@ class TestEnqueueAfterCommitRollback:
         mock_sync_client.return_value.__exit__ = MagicMock(return_value=False)
 
         import ojs
+
         original = getattr(ojs, "SyncClient", None)
         ojs.SyncClient = mock_sync_client  # type: ignore[attr-defined]
         try:
@@ -97,6 +98,7 @@ class TestEnqueueAfterCommitRollback:
         mock_sync_client.return_value.__exit__ = MagicMock(return_value=False)
 
         import ojs
+
         original = getattr(ojs, "SyncClient", None)
         ojs.SyncClient = mock_sync_client  # type: ignore[attr-defined]
         try:
@@ -139,16 +141,13 @@ class TestEnqueueAfterCommitRollback:
         mock_sync_client.return_value.__exit__ = MagicMock(return_value=False)
 
         import ojs
+
         original = getattr(ojs, "SyncClient", None)
         ojs.SyncClient = mock_sync_client  # type: ignore[attr-defined]
         try:
             with factory() as session:
-                enqueue_after_commit(
-                    session, "http://localhost:8080", "job.1", [1]
-                )
-                enqueue_after_commit(
-                    session, "http://localhost:8080", "job.2", [2]
-                )
+                enqueue_after_commit(session, "http://localhost:8080", "job.1", [1])
+                enqueue_after_commit(session, "http://localhost:8080", "job.2", [2])
                 session.commit()
 
             # Both listeners should have been called
@@ -156,4 +155,3 @@ class TestEnqueueAfterCommitRollback:
         finally:
             if original is not None:
                 ojs.SyncClient = original  # type: ignore[attr-defined]
-

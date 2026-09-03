@@ -9,11 +9,10 @@ from __future__ import annotations
 
 import threading
 import uuid
+from collections.abc import Callable
 from typing import Any
 
 from django.http import HttpRequest, HttpResponse
-
-from ojs_django.conf import get_ojs_settings
 
 # Thread-local storage for request context
 _local = threading.local()
@@ -39,7 +38,7 @@ class OJSMiddleware:
         ]
     """
 
-    def __init__(self, get_response: Any) -> None:
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:

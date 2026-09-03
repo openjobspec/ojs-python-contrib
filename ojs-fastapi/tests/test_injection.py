@@ -16,7 +16,6 @@ from fastapi import Depends, FastAPI  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 from ojs_fastapi import OJSPlugin, get_ojs_client  # noqa: E402
-from ojs_fastapi.models import EnqueueResponse  # noqa: E402
 
 
 @dataclass

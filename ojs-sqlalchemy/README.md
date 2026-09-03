@@ -1,6 +1,6 @@
 # openjobspec-sqlalchemy
 
-SQLAlchemy integration for [Open Job Spec (OJS)](https://github.com/openjobspec/openjobspec) — enqueue background jobs transactionally alongside your database writes.
+SQLAlchemy integration for [Open Job Spec (OJS)](https://github.com/openjobspec/spec) — enqueue background jobs transactionally alongside your database writes.
 
 ## Features
 
@@ -24,6 +24,7 @@ The simplest approach: register a job to be sent to OJS only when the database t
 ```python
 from sqlalchemy.orm import Session
 from ojs_sqlalchemy import enqueue_after_commit
+
 
 def create_user(session: Session, email: str) -> None:
     user = User(email=email)
@@ -49,6 +50,7 @@ For async SQLAlchemy sessions, use `enqueue_after_commit_async`:
 ```python
 from ojs_sqlalchemy import enqueue_after_commit_async
 
+
 async def create_user(session: Session, email: str) -> None:
     user = User(email=email)
     session.add(user)
@@ -73,6 +75,7 @@ For reliable delivery even when the OJS server is temporarily unavailable, use t
 from ojs_sqlalchemy import OJSOutbox
 
 outbox = OJSOutbox()
+
 
 def create_order(session: Session, order_data: dict) -> None:
     order = Order(**order_data)

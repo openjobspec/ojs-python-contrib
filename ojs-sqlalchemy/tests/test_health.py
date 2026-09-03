@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime
 from types import ModuleType
 from unittest.mock import MagicMock
 
@@ -12,11 +12,11 @@ _mock_ojs.SyncClient = MagicMock  # type: ignore[attr-defined]
 _mock_ojs.Client = MagicMock  # type: ignore[attr-defined]
 sys.modules.setdefault("ojs", _mock_ojs)
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
 
-from ojs_sqlalchemy.health import OutboxHealthCheck
-from ojs_sqlalchemy.models import Base, OJSOutboxEntry
+from ojs_sqlalchemy.health import OutboxHealthCheck  # noqa: E402
+from ojs_sqlalchemy.models import Base, OJSOutboxEntry  # noqa: E402
 
 
 def _make_session_factory() -> sessionmaker:
@@ -46,11 +46,13 @@ class TestOutboxHealthCheck:
 
         with factory() as session:
             for i in range(3):
-                session.add(OJSOutboxEntry(
-                    job_type=f"job.{i}",
-                    status="pending",
-                    created_at=datetime.now(timezone.utc),
-                ))
+                session.add(
+                    OJSOutboxEntry(
+                        job_type=f"job.{i}",
+                        status="pending",
+                        created_at=datetime.now(UTC),
+                    )
+                )
             session.commit()
 
         health = OutboxHealthCheck(session_factory=factory, max_pending_threshold=10)
@@ -66,11 +68,13 @@ class TestOutboxHealthCheck:
 
         with factory() as session:
             for i in range(5):
-                session.add(OJSOutboxEntry(
-                    job_type=f"job.{i}",
-                    status="pending",
-                    created_at=datetime.now(timezone.utc),
-                ))
+                session.add(
+                    OJSOutboxEntry(
+                        job_type=f"job.{i}",
+                        status="pending",
+                        created_at=datetime.now(UTC),
+                    )
+                )
             session.commit()
 
         health = OutboxHealthCheck(
@@ -87,16 +91,20 @@ class TestOutboxHealthCheck:
         factory = _make_session_factory()
 
         with factory() as session:
-            session.add(OJSOutboxEntry(
-                job_type="good.job",
-                status="pending",
-                created_at=datetime.now(timezone.utc),
-            ))
-            session.add(OJSOutboxEntry(
-                job_type="bad.job",
-                status="failed",
-                created_at=datetime.now(timezone.utc),
-            ))
+            session.add(
+                OJSOutboxEntry(
+                    job_type="good.job",
+                    status="pending",
+                    created_at=datetime.now(UTC),
+                )
+            )
+            session.add(
+                OJSOutboxEntry(
+                    job_type="bad.job",
+                    status="failed",
+                    created_at=datetime.now(UTC),
+                )
+            )
             session.commit()
 
         health = OutboxHealthCheck(session_factory=factory)
@@ -110,18 +118,22 @@ class TestOutboxHealthCheck:
         factory = _make_session_factory()
 
         with factory() as session:
-            session.add(OJSOutboxEntry(
-                job_type="done.job",
-                status="published",
-                created_at=datetime.now(timezone.utc),
-                published_at=datetime.now(timezone.utc),
-            ))
-            session.add(OJSOutboxEntry(
-                job_type="done.job2",
-                status="published",
-                created_at=datetime.now(timezone.utc),
-                published_at=datetime.now(timezone.utc),
-            ))
+            session.add(
+                OJSOutboxEntry(
+                    job_type="done.job",
+                    status="published",
+                    created_at=datetime.now(UTC),
+                    published_at=datetime.now(UTC),
+                )
+            )
+            session.add(
+                OJSOutboxEntry(
+                    job_type="done.job2",
+                    status="published",
+                    created_at=datetime.now(UTC),
+                    published_at=datetime.now(UTC),
+                )
+            )
             session.commit()
 
         health = OutboxHealthCheck(session_factory=factory)

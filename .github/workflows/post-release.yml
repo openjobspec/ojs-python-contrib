@@ -1,0 +1,66 @@
+name: Post-release registry verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Released package version
+        required: true
+        type: string
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  pypi:
+    name: ${{ matrix.distribution }} from PyPI
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distribution: openjobspec-django
+            import-name: ojs_django
+          - distribution: openjobspec-flask
+            import-name: ojs_flask
+          - distribution: openjobspec-fastapi
+            import-name: ojs_fastapi
+          - distribution: openjobspec-celery
+            import-name: ojs_celery
+          - distribution: openjobspec-sqlalchemy
+            import-name: ojs_sqlalchemy
+    steps:
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.13"
+
+      - name: Resolve release version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$EVENT_NAME" = "release" ]; then
+            VERSION="${RELEASE_TAG#v}"
+          else
+            VERSION="$MANUAL_VERSION"
+          fi
+          test -n "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install from PyPI and verify
+        env:
+          DISTRIBUTION: ${{ matrix.distribution }}
+          IMPORT_NAME: ${{ matrix.import-name }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          CONSUMER_DIR="$PWD/.registry-smoke-${{ matrix.import-name }}"
+          rm -rf "$CONSUMER_DIR"
+          trap 'rm -rf "$CONSUMER_DIR"' EXIT
+          python -m pip install "uv==0.11.28"
+          uv venv "$CONSUMER_DIR" --python 3.13
+          uv pip install --python "$CONSUMER_DIR/bin/python" "${DISTRIBUTION}==${RELEASE_VERSION}"
+          "$CONSUMER_DIR/bin/python" -c "import importlib, importlib.metadata, os, ojs; importlib.import_module(os.environ['IMPORT_NAME']); assert importlib.metadata.version(os.environ['DISTRIBUTION']) == os.environ['RELEASE_VERSION']; assert importlib.metadata.version('openjobspec') == ojs.__version__ == os.environ['RELEASE_VERSION']"

@@ -9,10 +9,9 @@ from ojs_flask.worker import FlaskOJSWorker
 __version__ = "0.9.0"
 __all__ = [
     "OJS",
+    "FlaskOJSWorker",
+    "create_health_blueprint",
     "enqueue",
     "get_client",
     "ojs_cli",
-    "create_health_blueprint",
-    "FlaskOJSWorker",
 ]
-

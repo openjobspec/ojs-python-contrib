@@ -19,12 +19,10 @@ from __future__ import annotations
 import json
 import logging
 from queue import Empty
-from typing import Any
-
-from kombu.transport import virtual
-from kombu.utils.encoding import bytes_to_str
+from typing import Any, cast
 
 import ojs
+from kombu.transport import virtual
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +42,7 @@ def _parse_ojs_url(url: str) -> str:
     return url
 
 
-class Channel(virtual.Channel):
+class Channel(virtual.Channel):  # type: ignore[misc]  # kombu base class is untyped
     """Kombu channel that maps Celery operations to OJS API calls.
 
     - ``basic_publish()`` → enqueues an OJS job
@@ -59,9 +57,7 @@ class Channel(virtual.Channel):
     def client(self) -> ojs.SyncClient:
         """Lazy-initialized OJS SyncClient."""
         if self._client is None:
-            url = _parse_ojs_url(
-                self.connection.client.hostname or "http://localhost:8080"
-            )
+            url = _parse_ojs_url(self.connection.client.hostname or "http://localhost:8080")
             self._client = ojs.SyncClient(url)
         return self._client
 
@@ -88,7 +84,9 @@ class Channel(virtual.Channel):
             try:
                 decoded = json.loads(body) if isinstance(body, (str, bytes)) else body
                 if isinstance(decoded, (list, tuple)) and len(decoded) >= 1:
-                    args = list(decoded[0]) if isinstance(decoded[0], (list, tuple)) else [decoded[0]]
+                    args = (
+                        list(decoded[0]) if isinstance(decoded[0], (list, tuple)) else [decoded[0]]
+                    )
             except (json.JSONDecodeError, TypeError, IndexError):
                 args = [body]
 
@@ -113,7 +111,6 @@ class Channel(virtual.Channel):
         enqueue_kwargs["meta"] = meta
 
         # Retry policy from Celery headers
-        retries = headers.get("retries")
         max_retries = headers.get("max_retries")
         if max_retries is not None:
             enqueue_kwargs["retry"] = {"max_attempts": int(max_retries) + 1}
@@ -134,12 +131,18 @@ class Channel(virtual.Channel):
             Empty: If no jobs are available.
         """
         try:
-            job = self.client.fetch(queue=queue, timeout=1)
+            visibility_timeout_ms = max(1000, int((timeout or 30.0) * 1000))
+            jobs = self.client.fetch(
+                [queue],
+                count=1,
+                visibility_timeout_ms=visibility_timeout_ms,
+            )
         except Exception:
-            raise Empty()
+            raise Empty() from None
 
-        if job is None:
+        if not jobs:
             raise Empty()
+        job = jobs[0]
 
         meta = job.meta or {}
 
@@ -149,7 +152,7 @@ class Channel(virtual.Channel):
             # Update delivery info for this consumer
             original_message.setdefault("properties", {})
             original_message["properties"]["delivery_tag"] = job.id
-            return original_message
+            return cast(dict[str, Any], original_message)
 
         # Otherwise, reconstruct a Celery message from OJS job data
         body = json.dumps([job.args or [], {}, {}])
@@ -178,42 +181,39 @@ class Channel(virtual.Channel):
     def basic_ack(self, delivery_tag: str, **kwargs: Any) -> None:
         """Acknowledge (complete) an OJS job."""
         try:
-            self.client.complete(delivery_tag)
+            self.client.ack(delivery_tag)
         except Exception:
-            logger.warning(
-                "Failed to ack OJS job %s", delivery_tag, exc_info=True
-            )
+            logger.warning("Failed to ack OJS job %s", delivery_tag, exc_info=True)
         super().basic_ack(delivery_tag, **kwargs)
 
-    def basic_reject(
-        self, delivery_tag: str, requeue: bool = False, **kwargs: Any
-    ) -> None:
+    def basic_reject(self, delivery_tag: str, requeue: bool = False, **kwargs: Any) -> None:
         """Reject an OJS job (fail or requeue)."""
         try:
-            if requeue:
-                self.client.release(delivery_tag)
-            else:
-                self.client.fail(delivery_tag, error="Rejected by Celery consumer")
-        except Exception:
-            logger.warning(
-                "Failed to reject OJS job %s", delivery_tag, exc_info=True
+            self.client.nack(
+                delivery_tag,
+                {
+                    "code": "celery_requeue" if requeue else "celery_rejected",
+                    "message": "Requeued by Celery consumer"
+                    if requeue
+                    else "Rejected by Celery consumer",
+                    "retryable": requeue,
+                },
             )
+        except Exception:
+            logger.warning("Failed to reject OJS job %s", delivery_tag, exc_info=True)
         super().basic_reject(delivery_tag, requeue=requeue, **kwargs)
 
     def _purge(self, queue: str) -> int:
         """Purge all jobs from a queue. Returns count of purged jobs."""
-        try:
-            result = self.client.purge_queue(queue)
-            return result if isinstance(result, int) else 0
-        except Exception:
-            logger.warning("Failed to purge OJS queue %s", queue, exc_info=True)
-            return 0
+        logger.warning(
+            "Celery queue purge is not mapped because OJS only defines guarded admin purge"
+        )
+        return 0
 
     def _size(self, queue: str) -> int:
         """Return the number of pending jobs in a queue."""
         try:
-            info = self.client.queue_info(queue)
-            return info.pending if hasattr(info, "pending") else 0
+            return self.client.queue_stats(queue).available
         except Exception:
             return 0
 
@@ -225,7 +225,7 @@ class Channel(virtual.Channel):
         super().close()
 
 
-class Transport(virtual.Transport):
+class Transport(virtual.Transport):  # type: ignore[misc]  # kombu base class is untyped
     """Kombu transport that uses OJS as the message broker.
 
     Register as a Celery broker:

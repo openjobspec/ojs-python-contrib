@@ -8,12 +8,12 @@ No Celery installation is required to use this module.
 
 from __future__ import annotations
 
-import datetime
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import ojs
 
-from ojs_celery.adapter import OJSTask
+from ojs_celery.adapter import OJSTask, _countdown_to_delay_until
 
 
 class CeleryCompat:
@@ -115,10 +115,7 @@ class CeleryCompat:
         if job_meta:
             enqueue_kwargs["meta"] = job_meta
         if countdown is not None:
-            delay_until = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-                seconds=countdown
-            )
-            enqueue_kwargs["delay_until"] = delay_until.isoformat()
+            enqueue_kwargs["delay_until"] = _countdown_to_delay_until(countdown)
 
         return self.client.enqueue(name, job_args, **enqueue_kwargs)
 

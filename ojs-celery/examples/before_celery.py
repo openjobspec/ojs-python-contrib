@@ -19,15 +19,15 @@ app.conf.task_acks_late = True
 @app.task(name="email.send")
 def send_email(to: str, subject: str, body: str) -> dict:
     """Send an email notification."""
-    print(f"Sending email to {to}: {subject}")
+    print(f"Sending email to {to}: {subject}")  # noqa: T201
     return {"status": "sent", "to": to}
 
 
 @app.task(name="report.generate", bind=True, max_retries=3)
-def generate_report(self, report_id: int, format: str = "pdf") -> dict:
+def generate_report(self, report_id: int, format: str = "pdf") -> dict:  # noqa: A002
     """Generate a report with retry support."""
     try:
-        print(f"Generating {format} report #{report_id}")
+        print(f"Generating {format} report #{report_id}")  # noqa: T201
         return {"report_id": report_id, "format": format, "status": "complete"}
     except Exception as exc:
         self.retry(exc=exc, countdown=60)
@@ -36,25 +36,25 @@ def generate_report(self, report_id: int, format: str = "pdf") -> dict:
 @app.task(name="data.cleanup", queue="maintenance")
 def cleanup_old_data(days: int = 30) -> dict:
     """Clean up data older than N days."""
-    print(f"Cleaning up data older than {days} days")
+    print(f"Cleaning up data older than {days} days")  # noqa: T201
     return {"deleted_count": 42}
 
 
 if __name__ == "__main__":
     # Enqueue tasks using Celery's API
-    print("=== Celery Task Enqueue Examples ===\n")
+    print("=== Celery Task Enqueue Examples ===\n")  # noqa: T201
 
     # Simple .delay() call
-    print("1. send_email.delay(...)")
-    print(f"   Would call: send_email.delay('user@example.com', 'Welcome', 'Hello!')\n")
+    print("1. send_email.delay(...)")  # noqa: T201
+    print("   Would call: send_email.delay('user@example.com', 'Welcome', 'Hello!')\n")  # noqa: T201
 
     # .apply_async() with queue and countdown
-    print("2. generate_report.apply_async(...)")
-    print(f"   Would call: generate_report.apply_async(args=[42], queue='reports', countdown=300)\n")
+    print("2. generate_report.apply_async(...)")  # noqa: T201
+    print("   Would call: generate_report.apply_async(args=[42], queue='reports', countdown=300)\n")  # noqa: T201
 
     # Task on a specific queue
-    print("3. cleanup_old_data.delay(...)")
-    print(f"   Would call: cleanup_old_data.delay(90)\n")
+    print("3. cleanup_old_data.delay(...)")  # noqa: T201
+    print("   Would call: cleanup_old_data.delay(90)\n")  # noqa: T201
 
-    print("NOTE: This example requires a running Celery broker and worker.")
-    print("See after_ojs.py for the OJS equivalent that uses HTTP instead.")
+    print("NOTE: This example requires a running Celery broker and worker.")  # noqa: T201
+    print("See after_ojs.py for the OJS equivalent that uses HTTP instead.")  # noqa: T201

@@ -3,23 +3,22 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-from ojs_celery.adapter import OJSAdapter, OJSTask
+from ojs_celery.adapter import OJSAdapter
 from ojs_celery.compat import CeleryCompat
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_client() -> MagicMock:
     client = MagicMock()
     client.enqueue.return_value = MagicMock(id="test-id", type="test", state="available")
     return client
 
 
-@pytest.fixture()
+@pytest.fixture
 def adapter(mock_client: MagicMock) -> OJSAdapter:
     a = OJSAdapter(ojs_url="http://localhost:8080")
     a._client = mock_client
@@ -29,9 +28,7 @@ def adapter(mock_client: MagicMock) -> OJSAdapter:
 class TestCountdownConversion:
     """Tests for countdown parameter converting to delay_until."""
 
-    def test_countdown_sets_delay_until(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_countdown_sets_delay_until(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="email.send")
         def send_email() -> None:
             pass
@@ -46,9 +43,7 @@ class TestCountdownConversion:
         expected_max = after + datetime.timedelta(seconds=120)
         assert expected_min <= delay_until <= expected_max
 
-    def test_countdown_zero(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_countdown_zero(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="email.send")
         def send_email() -> None:
             pass
@@ -57,9 +52,7 @@ class TestCountdownConversion:
         call_kwargs = mock_client.enqueue.call_args[1]
         assert "delay_until" in call_kwargs
 
-    def test_no_countdown_no_delay_until(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_no_countdown_no_delay_until(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="email.send")
         def send_email() -> None:
             pass
@@ -100,9 +93,7 @@ class TestCeleryCompatRetry:
 class TestCombinedMetaAndKwargs:
     """Tests for combining meta and kwargs in apply_async."""
 
-    def test_kwargs_merged_into_meta(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_kwargs_merged_into_meta(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="email.send")
         def send_email() -> None:
             pass
@@ -116,9 +107,7 @@ class TestCombinedMetaAndKwargs:
         assert call_kwargs["meta"]["kwargs"] == {"priority": "high"}
         assert call_kwargs["meta"]["source"] == "api"
 
-    def test_only_kwargs_creates_meta(
-        self, adapter: OJSAdapter, mock_client: MagicMock
-    ) -> None:
+    def test_only_kwargs_creates_meta(self, adapter: OJSAdapter, mock_client: MagicMock) -> None:
         @adapter.task(name="email.send")
         def send_email() -> None:
             pass

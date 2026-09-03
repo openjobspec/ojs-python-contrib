@@ -11,14 +11,14 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
-    import ojs
+    pass
 
 from .models import OJSOutboxEntry
 
@@ -146,7 +146,7 @@ class OutboxPublisher:
                             .where(OJSOutboxEntry.id == entry.id)
                             .values(
                                 status="published",
-                                published_at=datetime.now(timezone.utc),
+                                published_at=datetime.now(UTC),
                             )
                         )
                         published += 1
@@ -172,9 +172,7 @@ class OutboxPublisher:
         Returns:
             Number of entries deleted.
         """
-        cutoff = datetime.fromtimestamp(
-            time.time() - older_than_seconds, tz=timezone.utc
-        )
+        cutoff = datetime.fromtimestamp(time.time() - older_than_seconds, tz=UTC)
 
         with self._session_factory() as session:
             stmt = (

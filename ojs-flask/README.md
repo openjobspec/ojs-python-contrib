@@ -1,6 +1,6 @@
 # ojs-flask
 
-Flask integration for [Open Job Spec (OJS)](https://github.com/openjobspec/openjobspec) — a universal, language-agnostic standard for background job processing.
+Flask integration for [Open Job Spec (OJS)](https://github.com/openjobspec/spec) — a universal, language-agnostic standard for background job processing.
 
 ## Installation
 
@@ -26,6 +26,7 @@ ojs = OJS(app)
 # Or, with the application factory pattern
 ojs = OJS()
 
+
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config["OJS_URL"] = "http://localhost:8080"
@@ -38,6 +39,7 @@ def create_app() -> Flask:
 ```python
 from flask import request
 from ojs_flask import enqueue
+
 
 @app.post("/emails")
 def send_email() -> tuple[dict[str, str], int]:
@@ -69,15 +71,18 @@ import ojs
 
 worker = ojs.Worker("http://localhost:8080", queues=["email", "reports"])
 
+
 @worker.register("email.send")
 async def handle_email(ctx: ojs.JobContext):
     to, subject, body = ctx.args
     await send_email(to, subject, body)
 
+
 @worker.register("report.generate")
 async def handle_report(ctx: ojs.JobContext):
     report_type = ctx.args[0]
     await generate_report(report_type)
+
 
 if __name__ == "__main__":
     asyncio.run(worker.start())

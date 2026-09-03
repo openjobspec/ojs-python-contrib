@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import func, select
@@ -64,23 +64,19 @@ class OutboxHealthCheck:
     @staticmethod
     def _count_by_status(session: Session, status: str) -> int:
         """Count outbox entries with the given status."""
-        result = session.execute(
-            select(func.count()).where(OJSOutboxEntry.status == status)
-        )
+        result = session.execute(select(func.count()).where(OJSOutboxEntry.status == status))
         return result.scalar() or 0
 
     @staticmethod
     def _oldest_pending_age(session: Session) -> float | None:
         """Return the age in seconds of the oldest pending entry, or None."""
         result = session.execute(
-            select(func.min(OJSOutboxEntry.created_at)).where(
-                OJSOutboxEntry.status == "pending"
-            )
+            select(func.min(OJSOutboxEntry.created_at)).where(OJSOutboxEntry.status == "pending")
         )
         oldest = result.scalar()
         if oldest is None:
             return None
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if oldest.tzinfo is None:
-            oldest = oldest.replace(tzinfo=timezone.utc)
+            oldest = oldest.replace(tzinfo=UTC)
         return (now - oldest).total_seconds()

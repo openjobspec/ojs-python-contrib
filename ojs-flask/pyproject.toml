@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openjobspec-flask"
-version = "0.2.0"
+version = "0.5.0"
 description = "Flask integration for Open Job Spec (OJS)"
 readme = "README.md"
 license = "Apache-2.0"
@@ -19,7 +19,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dependencies = [
-    "openjobspec>=0.2.0",
+    "openjobspec>=0.5.0,<0.6.0",
     "flask>=3.0",
 ]
 
@@ -28,14 +28,20 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "ruff>=0.4",
-    "mypy>=1.10",
+    "mypy>=1.10,<2.0",
+    "pip-audit>=2.7",
 ]
 
 [project.urls]
 Repository = "https://github.com/openjobspec/ojs-python-contrib"
+Changelog = "https://github.com/openjobspec/ojs-python-contrib/blob/main/CHANGELOG.md"
+Issues = "https://github.com/openjobspec/ojs-python-contrib/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ojs_flask"]
+
+[tool.uv.sources]
+openjobspec = { path = "../../ojs-python-sdk", editable = false }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

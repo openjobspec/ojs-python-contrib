@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from io import StringIO
 from unittest.mock import MagicMock, patch
 
@@ -31,11 +32,8 @@ def test_ojs_purge_command_is_discovered() -> None:
 def test_ojs_worker_command_help() -> None:
     """The ojs_worker command should have meaningful help text."""
     out = StringIO()
-    with patch("sys.stdout", out):
-        try:
-            call_command("ojs_worker", "--help")
-        except SystemExit:
-            pass
+    with patch("sys.stdout", out), contextlib.suppress(SystemExit):
+        call_command("ojs_worker", "--help")
     output = out.getvalue()
     assert "OJS" in output or "worker" in output.lower()
 
@@ -48,9 +46,7 @@ def test_ojs_status_healthy_server() -> None:
     mock_client.list_queues.return_value = []
 
     out = StringIO()
-    with patch(
-        "ojs_django.management.commands.ojs_status.get_client", return_value=mock_client
-    ):
+    with patch("ojs_django.management.commands.ojs_status.get_client", return_value=mock_client):
         call_command("ojs_status", stdout=out)
 
     output = out.getvalue()
@@ -64,9 +60,7 @@ def test_ojs_status_unreachable_server() -> None:
     mock_client.health.side_effect = ConnectionError("refused")
 
     err = StringIO()
-    with patch(
-        "ojs_django.management.commands.ojs_status.get_client", return_value=mock_client
-    ):
+    with patch("ojs_django.management.commands.ojs_status.get_client", return_value=mock_client):
         call_command("ojs_status", stderr=err)
 
     output = err.getvalue()
@@ -83,9 +77,7 @@ def test_ojs_status_json_output() -> None:
     mock_client.list_queues.return_value = []
 
     out = StringIO()
-    with patch(
-        "ojs_django.management.commands.ojs_status.get_client", return_value=mock_client
-    ):
+    with patch("ojs_django.management.commands.ojs_status.get_client", return_value=mock_client):
         call_command("ojs_status", "--json", stdout=out)
 
     data = json.loads(out.getvalue())
@@ -99,9 +91,7 @@ def test_ojs_purge_no_jobs() -> None:
     mock_client.list_dead_letter_jobs.return_value = {"jobs": []}
 
     out = StringIO()
-    with patch(
-        "ojs_django.management.commands.ojs_purge.get_client", return_value=mock_client
-    ):
+    with patch("ojs_django.management.commands.ojs_purge.get_client", return_value=mock_client):
         call_command("ojs_purge", stdout=out)
 
     assert "No dead letter jobs" in out.getvalue()
@@ -116,9 +106,7 @@ def test_ojs_purge_dry_run() -> None:
     }
 
     out = StringIO()
-    with patch(
-        "ojs_django.management.commands.ojs_purge.get_client", return_value=mock_client
-    ):
+    with patch("ojs_django.management.commands.ojs_purge.get_client", return_value=mock_client):
         call_command("ojs_purge", "--dry-run", stdout=out)
 
     output = out.getvalue()
@@ -137,9 +125,7 @@ def test_ojs_purge_deletes_jobs() -> None:
     mock_client.delete_dead_letter_job.return_value = {}
 
     out = StringIO()
-    with patch(
-        "ojs_django.management.commands.ojs_purge.get_client", return_value=mock_client
-    ):
+    with patch("ojs_django.management.commands.ojs_purge.get_client", return_value=mock_client):
         call_command("ojs_purge", stdout=out)
 
     assert "Deleted 2" in out.getvalue()

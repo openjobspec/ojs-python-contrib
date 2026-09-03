@@ -8,10 +8,9 @@ from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from ojs_django import enqueue_after_commit
-
 # Ensure job handlers are imported so they are registered
 import myproject.jobs  # noqa: F401
+from ojs_django import enqueue_after_commit
 
 
 @csrf_exempt

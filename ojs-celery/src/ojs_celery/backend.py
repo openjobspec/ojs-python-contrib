@@ -14,29 +14,29 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
+import ojs
 from celery.backends.base import BaseBackend
 from celery.states import FAILURE, PENDING, RETRY, SUCCESS
-
-import ojs
 
 logger = logging.getLogger(__name__)
 
 # Map OJS job states to Celery states
 _OJS_TO_CELERY_STATE = {
-    "queued": PENDING,
+    "scheduled": PENDING,
+    "available": PENDING,
+    "pending": PENDING,
     "active": "STARTED",
     "completed": SUCCESS,
-    "failed": FAILURE,
-    "retrying": RETRY,
+    "retryable": RETRY,
     "cancelled": "REVOKED",
-    "dead": FAILURE,
+    "discarded": FAILURE,
 }
 
 
-class OJSResultBackend(BaseBackend):
+class OJSResultBackend(BaseBackend):  # type: ignore[misc]  # celery base class is untyped
     """Celery result backend backed by Open Job Spec.
 
     Stores task results as OJS job metadata and retrieves job status
@@ -87,10 +87,10 @@ class OJSResultBackend(BaseBackend):
         Returns:
             The result, unchanged.
         """
-        meta = {
+        meta: dict[str, Any] = {
             "celery_state": state,
             "celery_task_id": task_id,
-            "stored_at": datetime.now(timezone.utc).isoformat(),
+            "stored_at": datetime.now(UTC).isoformat(),
         }
 
         if state == SUCCESS:
@@ -108,19 +108,30 @@ class OJSResultBackend(BaseBackend):
             job = self._find_job_by_task_id(task_id)
             if job is not None:
                 if state == SUCCESS:
-                    self.client.complete(job.id, meta=meta)
+                    self.client.ack(job.id, result=meta["result"])
                 elif state == FAILURE:
-                    self.client.fail(job.id, error=str(result), meta=meta)
-                else:
-                    self.client.update_meta(job.id, meta=meta)
+                    self.client.nack(
+                        job.id,
+                        {
+                            "code": "celery_failure",
+                            "message": str(result),
+                            "retryable": False,
+                            "details": meta["error"],
+                        },
+                    )
+                elif state == RETRY:
+                    self.client.nack(
+                        job.id,
+                        {
+                            "code": "celery_retry",
+                            "message": str(result),
+                            "retryable": True,
+                        },
+                    )
             else:
-                logger.debug(
-                    "No OJS job found for task_id=%s; storing result locally", task_id
-                )
+                logger.debug("No OJS job found for task_id=%s; storing result locally", task_id)
         except Exception:
-            logger.warning(
-                "Failed to store result in OJS for task_id=%s", task_id, exc_info=True
-            )
+            logger.warning("Failed to store result in OJS for task_id=%s", task_id, exc_info=True)
 
         return result
 
@@ -138,18 +149,20 @@ class OJSResultBackend(BaseBackend):
             if job is None:
                 return self._default_meta(task_id)
 
-            meta = job.meta or {}
             celery_state = _OJS_TO_CELERY_STATE.get(job.state, PENDING)
 
             result = None
             traceback = None
 
-            if celery_state == SUCCESS and "result" in meta:
-                result = self._decode_result(meta["result"])
-            elif celery_state == FAILURE and "error" in meta:
-                error_info = meta["error"]
+            if celery_state == SUCCESS:
+                result = self._decode_result(job.result)
+            elif celery_state == FAILURE and job.errors:
+                error_info = job.errors[-1]
                 result = Exception(error_info.get("message", "Unknown error"))
-                traceback = error_info.get("traceback")
+                details = error_info.get("details")
+                if isinstance(details, dict):
+                    traceback_value = details.get("traceback")
+                    traceback = str(traceback_value) if traceback_value is not None else None
 
             return {
                 "task_id": task_id,
@@ -181,14 +194,6 @@ class OJSResultBackend(BaseBackend):
         # Direct lookup: task_id may be the OJS job ID
         try:
             return self.client.get_job(task_id)
-        except Exception:
-            pass
-
-        # Tag-based lookup
-        try:
-            jobs = self.client.list_jobs(tags=[f"celery_task_id:{task_id}"], limit=1)
-            if jobs:
-                return jobs[0]
         except Exception:
             pass
 

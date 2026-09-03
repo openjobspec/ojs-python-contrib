@@ -7,13 +7,13 @@ Provides ``enqueue``, ``enqueue_at``, ``enqueue_batch`` with
 from __future__ import annotations
 
 import functools
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import ojs
 from django.db import transaction
 
-from ojs_django.conf import get_ojs_settings
+from ojs_django.conf import OJSSettings, get_ojs_settings
 
 # Lazy-initialised shared client (created once per process)
 _sync_client: ojs.SyncClient | None = None
@@ -24,7 +24,7 @@ def get_client() -> ojs.SyncClient:
 
     The client is lazily created on first call and reused afterward.
     """
-    global _sync_client  # noqa: PLW0603
+    global _sync_client
     if _sync_client is None:
         cfg = get_ojs_settings()
         _sync_client = ojs.SyncClient(cfg.url)
@@ -33,10 +33,15 @@ def get_client() -> ojs.SyncClient:
 
 def reset_client() -> None:
     """Reset the cached client. Useful for testing."""
-    global _sync_client  # noqa: PLW0603
+    global _sync_client
     if _sync_client is not None:
         _sync_client.close()
     _sync_client = None
+
+
+def _resolve_queue(cfg: OJSSettings, queue: str | None) -> str:
+    """Apply the configured default and prefix to a requested queue name."""
+    return cfg.prefixed_queue(queue or cfg.default_queue)
 
 
 def enqueue(
@@ -65,7 +70,7 @@ def enqueue(
         The created Job with server-assigned ID and state.
     """
     cfg = get_ojs_settings()
-    resolved_queue = cfg.prefixed_queue(queue or cfg.default_queue)
+    resolved_queue = _resolve_queue(cfg, queue)
     return get_client().enqueue(
         job_type,
         list(args),
@@ -100,11 +105,11 @@ def enqueue_at(
         The created Job with server-assigned ID and state.
     """
     cfg = get_ojs_settings()
-    resolved_queue = cfg.prefixed_queue(queue or cfg.default_queue)
+    resolved_queue = _resolve_queue(cfg, queue)
 
     if isinstance(scheduled_at, datetime):
         if scheduled_at.tzinfo is None:
-            scheduled_at = scheduled_at.replace(tzinfo=timezone.utc)
+            scheduled_at = scheduled_at.replace(tzinfo=UTC)
         delay_until = scheduled_at.isoformat()
     else:
         delay_until = scheduled_at
@@ -206,5 +211,5 @@ def _do_enqueue(
 ) -> None:
     """Internal helper executed by ``on_commit``."""
     cfg = get_ojs_settings()
-    resolved_queue = cfg.prefixed_queue(queue or cfg.default_queue)
+    resolved_queue = _resolve_queue(cfg, queue)
     get_client().enqueue(job_type, args, queue=resolved_queue, meta=meta, **kwargs)

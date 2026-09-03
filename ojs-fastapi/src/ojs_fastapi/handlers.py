@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import functools
 from collections.abc import Callable, Coroutine
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from ojs_fastapi.depends import OJSPlugin
@@ -91,9 +90,9 @@ class OJSHandlerRegistry:
         )
 
         for job_type, jh in self._handlers.items():
-            worker.register(job_type, jh.handler)
+            worker.handler(job_type, jh.handler)
 
-        plugin._worker = worker  # noqa: SLF001
+        plugin._worker = worker
 
     @property
     def registered_types(self) -> list[str]:

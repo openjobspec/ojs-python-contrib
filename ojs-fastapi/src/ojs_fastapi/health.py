@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
@@ -37,7 +37,7 @@ def create_health_router(prefix: str = "/ojs", tags: list[str] | None = None) ->
     Returns:
         FastAPI APIRouter with /health and /status endpoints.
     """
-    router = APIRouter(prefix=prefix, tags=tags or ["ojs"])
+    router = APIRouter(prefix=prefix, tags=cast("list[Any] | None", tags or ["ojs"]))
 
     @router.get("/health", response_model=HealthResponse)
     async def health(request: Request) -> HealthResponse:
@@ -70,7 +70,7 @@ def create_health_router(prefix: str = "/ojs", tags: list[str] | None = None) ->
         client = plugin.client
         queues = await client.list_queues()
         queue_stats = []
-        for q in (queues or []):
+        for q in queues or []:
             try:
                 stats = await client.queue_stats(q.name)
                 queue_stats.append({"name": q.name, "stats": stats})

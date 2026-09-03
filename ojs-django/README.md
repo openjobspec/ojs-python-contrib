@@ -1,6 +1,6 @@
 # openjobspec-django
 
-Django integration for [Open Job Spec (OJS)](https://github.com/openjobspec/openjobspec) — a universal, language-agnostic standard for background job processing.
+Django integration for [Open Job Spec (OJS)](https://github.com/openjobspec/spec) — a universal, language-agnostic standard for background job processing.
 
 **Status:** Beta — API is stable and suitable for production use with non-critical workloads.
 
@@ -40,6 +40,7 @@ OJS = {
 import ojs
 from ojs_django import ojs_job
 
+
 @ojs_job("email.send", queue="email", retry=ojs.RetryPolicy(max_attempts=3))
 async def send_welcome_email(ctx: ojs.JobContext) -> dict:
     user_id = ctx.args[0]
@@ -57,6 +58,7 @@ Job modules (`jobs.py`) are **auto-discovered** from all installed apps on start
 from django.db import transaction
 from ojs_django import enqueue, enqueue_after_commit
 
+
 def create_user(request):
     with transaction.atomic():
         user = User.objects.create(email=request.POST["email"])
@@ -68,8 +70,10 @@ def create_user(request):
         )
     return JsonResponse({"id": user.id})
 
+
 # Or use the decorator's .enqueue() shortcut:
 from myapp.jobs import send_welcome_email
+
 
 def create_user_v2(request):
     user = User.objects.create(email=request.POST["email"])
@@ -91,19 +95,15 @@ All settings are read from the `OJS` dict in `settings.py`:
 OJS = {
     # OJS server URL
     "URL": "http://localhost:8080",
-
     # Default queue for enqueued jobs
     "DEFAULT_QUEUE": "default",
-
     # Optional prefix for all queue names (useful for multi-tenant)
     "QUEUE_PREFIX": "",
-
     # Default retry policy applied to all jobs unless overridden
     "DEFAULT_RETRY": {
         "max_attempts": 5,
         "backoff": "exponential",
     },
-
     # Worker-specific settings
     "WORKER": {
         "concurrency": 10,
@@ -141,6 +141,7 @@ Decorator that registers an async function as a handler and adds `.enqueue()` / 
 async def handle_report(ctx: ojs.JobContext) -> dict:
     report_type = ctx.args[0]
     return generate_report(report_type)
+
 
 # Enqueue via the decorator
 handle_report.enqueue("monthly")
@@ -180,10 +181,12 @@ Enqueue multiple jobs atomically:
 ```python
 from ojs_django import enqueue_batch
 
-jobs = enqueue_batch([
-    {"type": "email.send", "args": ["a@b.com", "welcome"]},
-    {"type": "email.send", "args": ["c@d.com", "welcome"], "queue": "bulk"},
-])
+jobs = enqueue_batch(
+    [
+        {"type": "email.send", "args": ["a@b.com", "welcome"]},
+        {"type": "email.send", "args": ["c@d.com", "welcome"], "queue": "bulk"},
+    ]
+)
 ```
 
 ### `enqueue_after_commit(job_type, args, *, queue, meta, using)`

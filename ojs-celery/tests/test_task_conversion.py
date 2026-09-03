@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
-from ojs_celery.adapter import OJSAdapter, OJSTask
+from ojs_celery.adapter import OJSAdapter
 from ojs_celery.compat import CeleryCompat
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_client() -> MagicMock:
     client = MagicMock()
     client.enqueue.return_value = MagicMock(id="test-id", type="test", state="available")
@@ -45,9 +44,7 @@ class TestTaskConversion:
             pass
 
         gen_report.apply_async(args=[42], queue="reports")
-        mock_client.enqueue.assert_called_once_with(
-            "report.generate", [42], queue="reports"
-        )
+        mock_client.enqueue.assert_called_once_with("report.generate", [42], queue="reports")
 
     def test_celery_kwargs_stored_in_meta(self, mock_client: MagicMock) -> None:
         """Celery kwargs should be stored in OJS meta under 'kwargs' key."""
@@ -83,9 +80,7 @@ class TestQueueMapping:
         compat._client = mock_client
 
         compat.send_task("email.send", args=[], queue="priority")
-        mock_client.enqueue.assert_called_once_with(
-            "email.send", [], queue="priority"
-        )
+        mock_client.enqueue.assert_called_once_with("email.send", [], queue="priority")
 
     def test_task_specific_queue_on_compat(self, mock_client: MagicMock) -> None:
         compat = CeleryCompat(ojs_url="http://localhost:8080", default_queue="default")
@@ -130,4 +125,3 @@ class TestPriorityMapping:
         send_email.apply_async(args=[], meta={"priority": 10})
         call_kwargs = mock_client.enqueue.call_args[1]
         assert call_kwargs["meta"]["priority"] == 10
-

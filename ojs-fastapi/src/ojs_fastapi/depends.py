@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, AsyncIterator
+from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import Request
 
@@ -35,12 +36,12 @@ class OJSPlugin:
             raise RuntimeError(
                 "OJS client has not been started. Use ojs_lifespan or start manually."
             )
-        return self._client  # type: ignore[return-value]
+        return cast("ojs.Client", self._client)
 
     @property
     def worker(self) -> ojs.Worker | None:
         """Return the managed worker, or ``None`` if not configured."""
-        return self._worker  # type: ignore[return-value]
+        return cast("ojs.Worker | None", self._worker)
 
 
 async def get_ojs_client(request: Request) -> AsyncIterator[ojs.Client]:

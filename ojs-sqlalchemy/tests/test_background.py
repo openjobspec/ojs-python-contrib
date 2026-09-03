@@ -5,19 +5,19 @@ from __future__ import annotations
 import sys
 import time
 from types import ModuleType
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 _mock_ojs = ModuleType("ojs")
 _mock_ojs.SyncClient = MagicMock  # type: ignore[attr-defined]
 _mock_ojs.Client = MagicMock  # type: ignore[attr-defined]
 sys.modules.setdefault("ojs", _mock_ojs)
 
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import pytest  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
 
-from ojs_sqlalchemy.background import BackgroundOutboxPublisher, PublishStats
-from ojs_sqlalchemy.models import Base
+from ojs_sqlalchemy.background import BackgroundOutboxPublisher, PublishStats  # noqa: E402
+from ojs_sqlalchemy.models import Base  # noqa: E402
 
 
 def _make_session_factory() -> sessionmaker:

@@ -4,17 +4,19 @@ from __future__ import annotations
 
 import functools
 from collections.abc import Callable, Coroutine
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 import ojs
 
 from ojs_django.conf import get_ojs_settings
 
+T = TypeVar("T")
+
 # Module-level registry: job_type -> handler function
 _registry: dict[str, OJSJobWrapper[Any]] = {}
 
 
-class OJSJobWrapper[T]:
+class OJSJobWrapper(Generic[T]):
     """Wrapper around a job handler with enqueue capabilities.
 
     Created by the ``@ojs_job`` decorator. The wrapped function can be

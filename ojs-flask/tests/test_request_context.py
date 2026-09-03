@@ -10,7 +10,7 @@ from flask import Flask
 from ojs_flask import OJS, enqueue, get_client
 
 
-@pytest.fixture()
+@pytest.fixture
 def app() -> Flask:
     app = Flask(__name__)
     app.config["TESTING"] = True
@@ -34,9 +34,7 @@ class TestRequestContext:
             OJS(app)
             with app.test_request_context("/"):
                 enqueue("email.send", ["user@example.com"])
-                mock_client.enqueue.assert_called_once_with(
-                    "email.send", ["user@example.com"]
-                )
+                mock_client.enqueue.assert_called_once_with("email.send", ["user@example.com"])
 
     def test_client_same_across_request(self, app: Flask) -> None:
         """Within a single request, get_client should return the same instance."""

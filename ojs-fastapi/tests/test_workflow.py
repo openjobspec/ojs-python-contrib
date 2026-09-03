@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -21,7 +20,6 @@ from ojs_fastapi.workflow import (  # noqa: E402
     get_ojs_workflow,
     get_workflow_builder,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -48,24 +46,22 @@ def _build_app(plugin: OJSPlugin, mock_client: AsyncMock) -> FastAPI:
 
 
 @pytest.mark.asyncio
-async def test_get_ojs_workflow_yields_workflow() -> None:
-    """get_ojs_workflow should yield client.workflow() from app state."""
+async def test_get_ojs_workflow_yields_builder() -> None:
+    """get_ojs_workflow should yield a WorkflowBuilder bound to the client."""
     plugin = OJSPlugin(url="http://localhost:8080")
     mock_client = _make_mock_client()
-    mock_workflow = MagicMock()
-    mock_client.workflow = MagicMock(return_value=mock_workflow)
 
     app = _build_app(plugin, mock_client)
 
     @app.post("/pipelines")
     async def create_pipeline(wf: Any = Depends(get_ojs_workflow)) -> dict[str, str]:
-        return {"workflow": str(type(wf).__name__)}
+        return {"workflow": type(wf).__name__}
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         resp = await ac.post("/pipelines")
         assert resp.status_code == 200
-        mock_client.workflow.assert_called_once()
+        assert resp.json()["workflow"] == "WorkflowBuilder"
 
 
 @pytest.mark.asyncio
@@ -79,13 +75,17 @@ async def test_workflow_builder_chain() -> None:
     _ojs_mock.JobRequest = MagicMock(side_effect=lambda **kw: kw)
 
     builder = WorkflowBuilder(mock_client)
-    result = await builder.chain([
-        {"type": "extract.data", "args": ["src"]},
-        {"type": "transform.data"},
-    ])
+    result = await builder.chain(
+        [
+            {"type": "extract.data", "args": ["src"]},
+            {"type": "transform.data"},
+        ]
+    )
 
     assert result.id == "wf-chain-1"
     _ojs_mock.chain.assert_called_once()
+    # The SDK builder takes the workflow name as its first positional argument.
+    assert _ojs_mock.chain.call_args.args[0] == "chain"
     mock_client.workflow.assert_awaited_once_with("chain_step")
 
 
@@ -100,13 +100,16 @@ async def test_workflow_builder_group() -> None:
     _ojs_mock.JobRequest = MagicMock(side_effect=lambda **kw: kw)
 
     builder = WorkflowBuilder(mock_client)
-    result = await builder.group([
-        {"type": "resize.image", "args": ["img1"]},
-        {"type": "resize.image", "args": ["img2"]},
-    ])
+    result = await builder.group(
+        [
+            {"type": "resize.image", "args": ["img1"]},
+            {"type": "resize.image", "args": ["img2"]},
+        ]
+    )
 
     assert result.id == "wf-group-1"
     _ojs_mock.group.assert_called_once()
+    assert _ojs_mock.group.call_args.args[0] == "group"
     mock_client.workflow.assert_awaited_once_with("group_step")
 
 
@@ -128,6 +131,9 @@ async def test_workflow_builder_batch() -> None:
 
     assert result.id == "wf-batch-1"
     _ojs_mock.batch.assert_called_once()
+    # The callback is forwarded to the SDK as the ``on_complete`` keyword.
+    assert _ojs_mock.batch.call_args.args[0] == "batch"
+    assert "on_complete" in _ojs_mock.batch.call_args.kwargs
     mock_client.workflow.assert_awaited_once_with("batch_step")
 
 

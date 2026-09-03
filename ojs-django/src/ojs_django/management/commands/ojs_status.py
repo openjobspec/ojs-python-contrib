@@ -14,7 +14,7 @@ logger = logging.getLogger("ojs_django.status")
 
 
 class Command(BaseCommand):
-    help = "Check OJS server health and display queue statistics."  # noqa: A003
+    help = "Check OJS server health and display queue statistics."
 
     def add_arguments(self, parser: Any) -> None:
         parser.add_argument(
@@ -40,9 +40,7 @@ class Command(BaseCommand):
         try:
             health = client.health()
         except Exception as exc:
-            self.stderr.write(
-                self.style.ERROR(f"Cannot connect to OJS server at {cfg.url}: {exc}")
-            )
+            self.stderr.write(self.style.ERROR(f"Cannot connect to OJS server at {cfg.url}: {exc}"))
             return
 
         if options["json"]:
@@ -80,9 +78,7 @@ class Command(BaseCommand):
                     try:
                         stats = client.queue_stats(name)
                         if options["json"]:
-                            result["queues"].append(
-                                {"name": name, "stats": _stats_to_dict(stats)}
-                            )
+                            result["queues"].append({"name": name, "stats": _stats_to_dict(stats)})
                         else:
                             self.stdout.write(f"\n  {name}:")
                             _print_stats(self, stats, indent=4)

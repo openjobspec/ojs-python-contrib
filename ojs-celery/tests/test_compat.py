@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,14 +10,14 @@ from ojs_celery.adapter import OJSTask
 from ojs_celery.compat import CeleryCompat
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_client() -> MagicMock:
     client = MagicMock()
     client.enqueue.return_value = MagicMock(id="compat-job-id", type="test", state="available")
     return client
 
 
-@pytest.fixture()
+@pytest.fixture
 def compat(mock_client: MagicMock) -> CeleryCompat:
     app = CeleryCompat(ojs_url="http://localhost:8080", default_queue="jobs")
     app._client = mock_client
@@ -86,9 +85,7 @@ class TestCeleryCompatTaskDecorator:
 class TestCeleryCompatDelay:
     """Tests for task.delay() via CeleryCompat."""
 
-    def test_delay_uses_default_queue(
-        self, compat: CeleryCompat, mock_client: MagicMock
-    ) -> None:
+    def test_delay_uses_default_queue(self, compat: CeleryCompat, mock_client: MagicMock) -> None:
         @compat.task(name="email.send")
         def send_email(to: str) -> None:
             pass
@@ -114,25 +111,19 @@ class TestCeleryCompatDelay:
 class TestCeleryCompatSendTask:
     """Tests for CeleryCompat.send_task() dynamic dispatch."""
 
-    def test_send_task_basic(
-        self, compat: CeleryCompat, mock_client: MagicMock
-    ) -> None:
+    def test_send_task_basic(self, compat: CeleryCompat, mock_client: MagicMock) -> None:
         compat.send_task("email.send", args=["user@example.com"])
         mock_client.enqueue.assert_called_once_with(
             "email.send", ["user@example.com"], queue="jobs"
         )
 
-    def test_send_task_with_queue(
-        self, compat: CeleryCompat, mock_client: MagicMock
-    ) -> None:
+    def test_send_task_with_queue(self, compat: CeleryCompat, mock_client: MagicMock) -> None:
         compat.send_task("email.send", args=["user@example.com"], queue="email")
         mock_client.enqueue.assert_called_once_with(
             "email.send", ["user@example.com"], queue="email"
         )
 
-    def test_send_task_with_kwargs(
-        self, compat: CeleryCompat, mock_client: MagicMock
-    ) -> None:
+    def test_send_task_with_kwargs(self, compat: CeleryCompat, mock_client: MagicMock) -> None:
         compat.send_task(
             "email.send",
             args=["user@example.com"],
@@ -145,28 +136,20 @@ class TestCeleryCompatSendTask:
             meta={"kwargs": {"priority": "high"}},
         )
 
-    def test_send_task_with_countdown(
-        self, compat: CeleryCompat, mock_client: MagicMock
-    ) -> None:
+    def test_send_task_with_countdown(self, compat: CeleryCompat, mock_client: MagicMock) -> None:
         compat.send_task("email.send", args=[], countdown=60)
         call_kwargs = mock_client.enqueue.call_args[1]
         assert "delay_until" in call_kwargs
 
-    def test_send_task_with_meta(
-        self, compat: CeleryCompat, mock_client: MagicMock
-    ) -> None:
+    def test_send_task_with_meta(self, compat: CeleryCompat, mock_client: MagicMock) -> None:
         compat.send_task("email.send", args=[], meta={"tenant": "acme"})
         mock_client.enqueue.assert_called_once_with(
             "email.send", [], queue="jobs", meta={"tenant": "acme"}
         )
 
-    def test_send_task_no_args(
-        self, compat: CeleryCompat, mock_client: MagicMock
-    ) -> None:
+    def test_send_task_no_args(self, compat: CeleryCompat, mock_client: MagicMock) -> None:
         compat.send_task("cleanup.run")
-        mock_client.enqueue.assert_called_once_with(
-            "cleanup.run", [], queue="jobs"
-        )
+        mock_client.enqueue.assert_called_once_with("cleanup.run", [], queue="jobs")
 
 
 class TestCeleryCompatLifecycle:

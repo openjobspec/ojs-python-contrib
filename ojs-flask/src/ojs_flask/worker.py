@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import signal
 import threading
 from typing import Any
 
@@ -84,7 +83,7 @@ class FlaskOJSWorker:
         # Register handlers from the extension
         if self._ojs_ext is not None and hasattr(self._ojs_ext, "_handlers"):
             for job_type, handler in self._ojs_ext._handlers.items():
-                self._worker.register(job_type, handler)
+                self._worker.handler(job_type, handler)
 
         self._stop_event.clear()
         self._thread = threading.Thread(

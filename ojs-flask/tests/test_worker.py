@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +11,7 @@ from ojs_flask import OJS
 from ojs_flask.worker import FlaskOJSWorker
 
 
-@pytest.fixture()
+@pytest.fixture
 def app() -> Flask:
     app = Flask(__name__)
     app.config["TESTING"] = True
@@ -21,7 +20,7 @@ def app() -> Flask:
     return app
 
 
-@pytest.fixture()
+@pytest.fixture
 def ojs_ext(app: Flask) -> OJS:
     ext = OJS(app)
 
@@ -78,16 +77,14 @@ class TestWorkerLifecycle:
             )
 
             # Registered handlers should be forwarded to the SDK worker
-            mock_worker_instance.register.assert_called_once_with(
+            mock_worker_instance.handler.assert_called_once_with(
                 "email.send", ojs_ext._handlers["email.send"]
             )
         finally:
             worker.stop()
 
     @patch("ojs_flask.worker._ojs_sdk.Worker")
-    def test_worker_stop(
-        self, mock_worker_cls: MagicMock, app: Flask
-    ) -> None:
+    def test_worker_stop(self, mock_worker_cls: MagicMock, app: Flask) -> None:
         """Stopping the worker should clean up the thread."""
         mock_worker_instance = MagicMock()
         mock_worker_instance.start = MagicMock(return_value=_make_coro(None))
@@ -113,9 +110,7 @@ class TestWorkerLifecycle:
         assert worker.is_running is False
 
     @patch("ojs_flask.worker._ojs_sdk.Worker")
-    def test_worker_uses_app_config(
-        self, mock_worker_cls: MagicMock, app: Flask
-    ) -> None:
+    def test_worker_uses_app_config(self, mock_worker_cls: MagicMock, app: Flask) -> None:
         """Worker should read queues from app config when not specified."""
         app.config["OJS_QUEUES"] = ["high", "low"]
         mock_worker_instance = MagicMock()

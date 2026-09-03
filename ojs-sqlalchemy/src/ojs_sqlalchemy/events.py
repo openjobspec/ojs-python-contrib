@@ -8,11 +8,10 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from sqlalchemy import event
-from sqlalchemy.orm import Session
 
 from .models import OJSOutboxEntry
 
@@ -122,13 +121,7 @@ class OJSEventListener:
                 new_status=value,
                 entry=target,
             )
-            for cb in callbacks:
-                try:
-                    cb(evt)
-                except Exception:
-                    logger.exception(
-                        "Event callback error for %s → %s", target.job_type, value
-                    )
+            listener_ref._dispatch(evt, callbacks)
 
         self._installed = True
 
@@ -150,10 +143,13 @@ class OJSEventListener:
             new_status=new_status,
             entry=entry,
         )
+        self._dispatch(evt, callbacks)
+
+    @staticmethod
+    def _dispatch(evt: JobStateEvent, callbacks: list[StateChangeCallback]) -> None:
+        """Invoke each callback, isolating and logging callback failures."""
         for cb in callbacks:
             try:
                 cb(evt)
             except Exception:
-                logger.exception(
-                    "Event callback error for %s → %s", entry.job_type, new_status
-                )
+                logger.exception("Event callback error for %s → %s", evt.job_type, evt.new_status)

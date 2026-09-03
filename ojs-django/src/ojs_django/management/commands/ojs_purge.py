@@ -14,7 +14,7 @@ logger = logging.getLogger("ojs_django.purge")
 
 
 class Command(BaseCommand):
-    help = "Purge dead letter jobs from the OJS server."  # noqa: A003
+    help = "Purge dead letter jobs from the OJS server."
 
     def add_arguments(self, parser: Any) -> None:
         parser.add_argument(
@@ -48,9 +48,7 @@ class Command(BaseCommand):
         try:
             result = client.list_dead_letter_jobs(queue=queue, limit=limit)
         except Exception as exc:
-            self.stderr.write(
-                self.style.ERROR(f"Cannot connect to OJS server at {cfg.url}: {exc}")
-            )
+            self.stderr.write(self.style.ERROR(f"Cannot connect to OJS server at {cfg.url}: {exc}"))
             return
 
         jobs = result.get("jobs", [])
@@ -80,9 +78,7 @@ class Command(BaseCommand):
                 errors += 1
                 logger.warning("Failed to delete dead letter job %s: %s", job_id, exc)
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Deleted {deleted} dead letter job(s).")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Deleted {deleted} dead letter job(s)."))
         if errors:
             self.stdout.write(
                 self.style.WARNING(f"Failed to delete {errors} job(s). Check logs for details.")

@@ -71,19 +71,16 @@ class OJSCronBridge:
         Returns:
             List of registered cron job results.
         """
-        import ojs
-
         results = []
         for reg in self._registrations:
             try:
-                result = await client.register_cron(
-                    ojs.CronJob(
-                        type=reg.job_type,
-                        schedule=reg.schedule,
-                        args=reg.args,
-                        queue=reg.queue,
-                        meta=reg.meta,
-                    )
+                result = await client.register_cron_job(
+                    name=reg.job_type,
+                    cron=reg.schedule,
+                    job_type=reg.job_type,
+                    args=reg.args,
+                    queue=reg.queue,
+                    meta=reg.meta,
                 )
                 results.append(result)
                 logger.info("Registered cron: %s [%s]", reg.job_type, reg.schedule)

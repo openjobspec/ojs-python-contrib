@@ -33,7 +33,7 @@ worker = ojs.Worker(
     queues=plugin.queues,
     concurrency=plugin.concurrency,
 )
-plugin._worker = worker  # noqa: SLF001
+plugin._worker = worker
 
 
 @worker.register("email.send")

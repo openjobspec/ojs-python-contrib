@@ -91,14 +91,16 @@ def scan_celery_tasks(app: celery.Celery) -> list[dict[str, Any]]:
         if time_limit is not None:
             ojs_config["timeout_ms"] = int(time_limit * 1000)
 
-        report.append({
-            "name": task_name,
-            "queue": queue,
-            "max_retries": max_retries,
-            "rate_limit": rate_limit,
-            "time_limit": time_limit,
-            "acks_late": acks_late,
-            "ojs_equivalent": ojs_config,
-        })
+        report.append(
+            {
+                "name": task_name,
+                "queue": queue,
+                "max_retries": max_retries,
+                "rate_limit": rate_limit,
+                "time_limit": time_limit,
+                "acks_late": acks_late,
+                "ojs_equivalent": ojs_config,
+            }
+        )
 
     return report

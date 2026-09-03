@@ -69,10 +69,10 @@ def status_cmd() -> None:
         click.echo(f"Queues ({len(queues)}):")
         for q in queues:
             try:
-                stats = client.queue_stats(q)
-                click.echo(f"  {q}: {stats}")
+                stats = client.queue_stats(q.name)
+                click.echo(f"  {q.name}: {stats}")
             except Exception:
-                click.echo(f"  {q}: (unable to fetch stats)")
+                click.echo(f"  {q.name}: (unable to fetch stats)")
     except Exception as exc:
         click.echo(f"Unable to list queues: {exc}")
 
